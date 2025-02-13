@@ -6,6 +6,7 @@ import TradingInterface from "./components/TradingInterface";
 import Portfolio from "./components/Portfolio";
 import OrderTable from "./components/OrderTable";
 import PriceFetcher from "./components/PriceFetcher";
+import TradingSummary from "./components/TradingSummary";
 
 interface Order {
   id: number;
@@ -59,6 +60,10 @@ export default function Home() {
     return [];
   });
   const [realtimePL, setRealtimePL] = useState(0);
+  const [profitableTradesCount, setProfitableTradesCount] = useState(0);
+  const [lossTradesCount, setLossTradesCount] = useState(0);
+  const [mostProfitableTrade, setMostProfitableTrade] = useState(0);
+  const [biggestLossTrade, setBiggestLossTrade] = useState(0);
 
   useEffect(() => {
     localStorage.setItem("portfolio", JSON.stringify(portfolio));
@@ -94,7 +99,7 @@ export default function Home() {
       status: "open",
     };
 
-    setOrders((prevOrders) => [...prevOrders, newOrder]);
+    setOrders((prevOrders) => [newOrder, ...prevOrders]);
   };
 
   const handlePriceUpdate = (price: number) => {
@@ -112,6 +117,40 @@ export default function Home() {
 
     setRealtimePL(newPL);
   };
+
+  const updateTradingSummary = () => {
+    let profitable = 0;
+    let loss = 0;
+    let maxProfit = 0;
+    let maxLoss = 0;
+
+    orders.forEach((order) => {
+      if (order.status === "closed" && order.profit !== undefined) {
+        if (order.profit > 0) {
+          profitable++;
+          maxProfit = Math.max(maxProfit, order.profit);
+        } else if (order.profit < 0) {
+          loss++;
+          maxLoss = Math.min(maxLoss, order.profit);
+        }
+      }
+    });
+
+    setProfitableTradesCount(profitable);
+    setLossTradesCount(loss);
+    setMostProfitableTrade(maxProfit);
+    setBiggestLossTrade(Math.abs(maxLoss));
+  };
+
+  useEffect(() => {
+    updateTradingSummary();
+  }, [
+    orders,
+    profitableTradesCount,
+    lossTradesCount,
+    mostProfitableTrade,
+    biggestLossTrade,
+  ]);
 
   const handleAddMoney = (amount: number) => {
     setBalance((prevBalance) => prevBalance + amount);
@@ -190,6 +229,13 @@ export default function Home() {
             cryptocurrencies={CRYPTOCURRENCIES}
           />
         </div>
+        <TradingSummary
+          profitableTradesCount={profitableTradesCount}
+          lossTradesCount={lossTradesCount}
+          totalTradesCount={orders.length}
+          mostProfitableTrade={mostProfitableTrade}
+          biggestLossTrade={biggestLossTrade}
+        />
         <OrderTable
           orders={orders}
           currentPrice={currentPrice}
