@@ -21,10 +21,10 @@ export default function TradingViewChart({ symbol }: TradingViewChartProps) {
     script.async = true;
     script.onload = () => {
       if (containerRef.current) {
-        const widget = new window.TradingView.widget({
+        new window.TradingView.widget({
           autosize: true,
           symbol: `BINANCE:${symbol}USDT`,
-          interval: "1",
+          interval: "5", // Set default time to 5 minutes
           timezone: "Etc/UTC",
           theme: "light",
           style: "1",
@@ -33,73 +33,25 @@ export default function TradingViewChart({ symbol }: TradingViewChartProps) {
           enable_publishing: false,
           allow_symbol_change: true,
           container_id: containerRef.current.id,
-          datafeed: {
-            onReady: (callback: any) => {
-              setTimeout(() => callback({}));
-            },
-            searchSymbols: () => {},
-            resolveSymbol: (
-              symbolName: string,
-              onSymbolResolvedCallback: any
-            ) => {
-              onSymbolResolvedCallback({
-                name: symbolName,
-                full_name: symbolName,
-                description: symbolName,
-                type: "crypto",
-                session: "24x7",
-                timezone: "Etc/UTC",
-                ticker: symbolName,
-                minmov: 1,
-                pricescale: 100,
-                has_intraday: true,
-                supported_resolutions: [
-                  "1",
-                  "5",
-                  "15",
-                  "30",
-                  "60",
-                  "1D",
-                  "1W",
-                  "1M",
-                ],
-              });
-            },
-            getBars: (
-              symbolInfo: any,
-              resolution: any,
-              from: any,
-              to: any,
-              onHistoryCallback: any
-            ) => {
-              onHistoryCallback([], { noData: true });
-            },
-            subscribeBars: (
-              symbolInfo: any,
-              resolution: any,
-              onRealtimeCallback: any,
-              subscriberUID: any,
-              onResetCacheNeededCallback: any
-            ) => {
-              // Simulated price updates
-              const intervalId = setInterval(() => {
-                const price = Math.random() * 1000 + 30000; // Simulated price
-                onRealtimeCallback({
-                  time: Date.now(),
-                  open: price,
-                  high: price,
-                  low: price,
-                  close: price,
-                  volume: Math.random() * 1000,
-                });
-              }, 1000);
-              return () => clearInterval(intervalId);
-            },
-            unsubscribeBars: () => {},
+          hide_side_toolbar: false, // Show left toolbar for drawings
+          withdateranges: true,
+          drawings_access: {
+            type: "black", // Allows drawing on the chart
+            tools: [
+              { name: "Trend Line" },
+              { name: "Rectangle" },
+              { name: "Fib Retracement" },
+              { name: "Brush" },
+              { name: "Horizontal Line" },
+            ],
+          },
+          overrides: {
+            "mainSeriesProperties.style": 1, // Candlestick chart
+            "paneProperties.background": "#ffffff",
+            "paneProperties.vertGridProperties.color": "#E6E6E6",
+            "paneProperties.horzGridProperties.color": "#E6E6E6",
           },
         });
-
-        // No need for onChartReady here, as we're using a custom datafeed
       }
     };
     document.head.appendChild(script);
@@ -115,7 +67,7 @@ export default function TradingViewChart({ symbol }: TradingViewChartProps) {
     <div
       id="tradingview_widget"
       ref={containerRef}
-      className="w-full h-[500px]"
+      className="w-full h-[90vh]"
     />
   );
 }
