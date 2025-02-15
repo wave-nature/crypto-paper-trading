@@ -25,7 +25,7 @@ export default function TradingViewChart({ symbol }: TradingViewChartProps) {
           autosize: true,
           symbol: `BINANCE:${symbol}USDT`,
           interval: "5", // Set default time to 5 minutes
-          timezone: "Etc/UTC",
+          timezone: "Asia/Kolkata",
           theme: "light",
           style: "1",
           locale: "en",
