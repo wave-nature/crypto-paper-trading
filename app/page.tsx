@@ -29,6 +29,7 @@ const CRYPTOCURRENCIES = [
   "LINK",
   "AVAX",
   "MATIC",
+  "XAUUSD",
 ];
 
 export default function Home() {
@@ -211,7 +212,7 @@ export default function Home() {
   return (
     <div className="mx-auto px-4 py-8 my-4">
       <h1 className="text-3xl font-bold mb-6">Crypto Paper Trading</h1>
-      <div className="grid grid-cols-1 gap-6">
+      <div className="grid grid-cols-[3fr_1fr] gap-6">
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           <TradingViewChart symbol={selectedCrypto} />
           <PriceFetcher
@@ -219,8 +220,7 @@ export default function Home() {
             onPriceUpdate={handlePriceUpdate}
           />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Portfolio balance={balance} onAddMoney={handleAddMoney} />
+        <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
           <TradingInterface
             onTrade={handleTrade}
             currentPrice={currentPrice}
@@ -228,7 +228,10 @@ export default function Home() {
             onCryptoChange={setSelectedCrypto}
             cryptocurrencies={CRYPTOCURRENCIES}
           />
+          <Portfolio balance={balance} onAddMoney={handleAddMoney} />
         </div>
+      </div>
+      <div className="mt-5">
         <TradingSummary
           profitableTradesCount={profitableTradesCount}
           lossTradesCount={lossTradesCount}

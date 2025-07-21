@@ -23,7 +23,7 @@ export default function TradingViewChart({ symbol }: TradingViewChartProps) {
       if (containerRef.current) {
         new window.TradingView.widget({
           autosize: true,
-          symbol: `BINANCE:${symbol}USDT`,
+          symbol: symbol.includes("XAUUSD") ? "OANDA:XAUUSD" : `BINANCE:${symbol}USDT`,
           interval: "5", // Set default time to 5 minutes
           timezone: "Asia/Kolkata",
           theme: "light",
