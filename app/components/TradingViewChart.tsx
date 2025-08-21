@@ -23,7 +23,9 @@ export default function TradingViewChart({ symbol }: TradingViewChartProps) {
       if (containerRef.current) {
         new window.TradingView.widget({
           autosize: true,
-          symbol: symbol.includes("XAUUSD") ? "OANDA:XAUUSD" : `BINANCE:${symbol}USDT`,
+          symbol: symbol.includes("XAUUSD")
+            ? "OANDA:XAUUSD"
+            : `BINANCE:${symbol}USDT`,
           interval: "5", // Set default time to 5 minutes
           timezone: "Asia/Kolkata",
           theme: "light",
@@ -45,6 +47,14 @@ export default function TradingViewChart({ symbol }: TradingViewChartProps) {
               { name: "Horizontal Line" },
             ],
           },
+          studies: [
+            {
+              id: "MASimple@tv-basicstudies",
+              name: "SMA9", // 👈 unique name
+              inputs: [15],
+              styles: { 0: { color: "#FF0000" } }, // red
+            },
+          ],
           overrides: {
             "mainSeriesProperties.style": 1, // Candlestick chart
             "paneProperties.background": "#ffffff",
