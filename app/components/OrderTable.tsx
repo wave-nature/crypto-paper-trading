@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { X, Trash2 } from "lucide-react";
 import { Order } from "@/types";
+import useStore from "@/store";
 
 interface OrderTableProps {
   orders: Order[];
@@ -35,6 +36,7 @@ export default function OrderTable({
   overallProfitLoss,
 }: OrderTableProps) {
   const [isCardView, setIsCardView] = useState(false);
+  const { setPnL } = useStore();
 
   const calculateProfitLoss = (order: Order) => {
     if (order.status === "pending") return "N/A";
@@ -53,11 +55,21 @@ export default function OrderTable({
     return numValue >= 0 ? "text-green-500" : "text-red-500";
   };
 
+  useEffect(() => {
+    // open order
+    const order = orders.find((order) => order.status === "open");
+    if (!order) return;
+
+    const pnl = calculateProfitLoss(order);
+    setPnL(parseFloat(pnl));
+  }, [currentPrice]);
+
   const renderCardView = () => (
     <div className="space-y-4">
       {orders.map((order) => {
         const profitLoss = calculateProfitLoss(order);
         const profitLossClass = getProfitLossClass(profitLoss);
+
         return (
           <Card key={order.id} className="p-4">
             <div className="flex justify-between items-center mb-2">

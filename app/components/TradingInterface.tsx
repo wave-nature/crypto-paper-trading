@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import useStore from "@/store";
 
 interface TradingInterfaceProps {
   onTrade: (
@@ -33,6 +34,7 @@ export default function TradingInterface({
   const [limitPrice, setLimitPrice] = useState("");
   const [stopLoss, setStopLoss] = useState("");
   const [target, setTarget] = useState("");
+  const { pnl } = useStore();
 
   const handleTrade = (type: "buy" | "sell") => {
     const parsedAmount = Number.parseFloat(amount);
@@ -67,6 +69,8 @@ export default function TradingInterface({
     setStopLoss("");
     setTarget("");
   };
+
+  const profitLoss = pnl.toFixed(2);
 
   return (
     <Card className="h-full">
@@ -161,6 +165,12 @@ export default function TradingInterface({
               Current Price: $
               {currentPrice ? currentPrice.toFixed(2) : "Loading..."}
             </p>
+          </div>
+          <div className="flex align-center gap-3">
+            <span>P/L:</span>
+            <span className={pnl > 0 ? "text-green-500" : "text-red-500"}>
+              {pnl && `${profitLoss.startsWith("-") ? "" : "+"}$${profitLoss}`}
+            </span>
           </div>
           <div className="flex justify-between">
             <button
