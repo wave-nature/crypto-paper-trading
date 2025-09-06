@@ -15,18 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { X, Trash2 } from "lucide-react";
-
-interface Order {
-  id: number;
-  type: "buy" | "sell";
-  symbol: string;
-  amount: number;
-  price: number;
-  timestamp: number;
-  status: "open" | "closed";
-  closedPrice?: number;
-  profit?: number;
-}
+import { Order } from "@/types";
 
 interface OrderTableProps {
   orders: Order[];
@@ -48,6 +37,7 @@ export default function OrderTable({
   const [isCardView, setIsCardView] = useState(false);
 
   const calculateProfitLoss = (order: Order) => {
+    if (order.status === "pending") return "N/A";
     if (order.status === "closed" && order.profit !== undefined) {
       return order.profit.toFixed(2);
     }
@@ -123,10 +113,13 @@ export default function OrderTable({
     <Table>
       <TableHeader>
         <TableRow>
+          <TableHead>Order Type</TableHead>
           <TableHead>Type</TableHead>
           <TableHead>Symbol</TableHead>
           <TableHead>Amount</TableHead>
           <TableHead>Price</TableHead>
+          <TableHead>Target</TableHead>
+          <TableHead>SL</TableHead>
           <TableHead>Status</TableHead>
           <TableHead>Closed Price</TableHead>
           <TableHead>Profit/Loss</TableHead>
@@ -143,6 +136,18 @@ export default function OrderTable({
                 <Badge
                   style={{
                     background:
+                      order?.orderDetails?.orderType === "limit"
+                        ? "gray"
+                        : "black",
+                  }}
+                >
+                  {order?.orderDetails?.orderType?.toUpperCase() || "MARKET"}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                <Badge
+                  style={{
+                    background:
                       order.type === "buy"
                         ? "rgb(34, 197, 94)"
                         : "rgb(239, 68, 68)",
@@ -154,6 +159,12 @@ export default function OrderTable({
               <TableCell>{order.symbol}</TableCell>
               <TableCell>{order.amount.toFixed(8)}</TableCell>
               <TableCell>${order.price.toFixed(2)}</TableCell>
+              <TableCell>
+                ${order?.orderDetails?.target?.toFixed(2) || "0.00"}
+              </TableCell>
+              <TableCell>
+                ${order?.orderDetails?.stopLoss?.toFixed(2) || "0.00"}
+              </TableCell>
               <TableCell>
                 <Badge
                   variant={order.status === "open" ? "outline" : "secondary"}

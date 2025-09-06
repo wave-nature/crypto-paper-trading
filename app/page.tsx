@@ -7,18 +7,7 @@ import Portfolio from "./components/Portfolio";
 import OrderTable from "./components/OrderTable";
 import PriceFetcher from "./components/PriceFetcher";
 import TradingSummary from "./components/TradingSummary";
-
-interface Order {
-  id: number;
-  type: "buy" | "sell";
-  symbol: string;
-  amount: number;
-  price: number;
-  timestamp: number;
-  status: "open" | "closed";
-  closedPrice?: number;
-  profit?: number;
-}
+import { Order } from "@/types";
 
 const CRYPTOCURRENCIES = [
   "BTC",
@@ -53,7 +42,7 @@ export default function Home() {
 
   const [selectedCrypto, setSelectedCrypto] = useState("BTC");
   const [currentPrice, setCurrentPrice] = useState<number | null>(null);
-  const [orders, setOrders] = useState<any[]>(() => {
+  const [orders, setOrders] = useState<Order[]>(() => {
     if (typeof window !== "undefined") {
       const savedOrders = localStorage.getItem("orders");
       return savedOrders ? JSON.parse(savedOrders) : [];
@@ -65,46 +54,84 @@ export default function Home() {
   const [lossTradesCount, setLossTradesCount] = useState(0);
   const [mostProfitableTrade, setMostProfitableTrade] = useState(0);
   const [biggestLossTrade, setBiggestLossTrade] = useState(0);
-
   useEffect(() => {
     localStorage.setItem("portfolio", JSON.stringify(portfolio));
     localStorage.setItem("balance", balance.toString());
     localStorage.setItem("orders", JSON.stringify(orders));
   }, [portfolio, balance, orders]);
 
-  const handleTrade = (type: "buy" | "sell", amount: number) => {
+  const handleTrade = (
+    type: "buy" | "sell",
+    amount: number,
+    orderDetails: {
+      orderType: "market" | "limit";
+      limitPrice?: number;
+      stopLoss?: number;
+      target?: number;
+    }
+  ) => {
     if (currentPrice === null) return;
     // if any order is still open return
-    if (orders.some((order) => order.status === "open")) {
+    if (
+      orders.some(
+        (order) => order.status === "open" || order.status === "pending"
+      )
+    ) {
       alert("Please square off all open orders before placing a new order");
       return;
     }
-    const cost = amount * currentPrice;
-    if (type === "buy") {
-      if (cost > balance) {
-        alert("Insufficient funds!");
-        return;
+    if (orderDetails.orderType === "limit") {
+      const cost = amount * orderDetails?.limitPrice!;
+      if (type === "buy") {
+        if (cost > balance) {
+          alert("Insufficient funds!");
+          return;
+        }
       }
-      setBalance((prevBalance) => prevBalance - cost);
+
+      const newOrder: Order = {
+        id: Date.now(),
+        type,
+        symbol: selectedCrypto,
+        amount,
+        price: orderDetails.limitPrice!,
+        timestamp: Date.now(),
+        status: "pending",
+        orderDetails,
+      };
+
+      setOrders((prevOrders) => [newOrder, ...prevOrders]);
     } else {
-      setBalance((prevBalance) => prevBalance - cost);
+      const cost = amount * currentPrice;
+      if (type === "buy") {
+        if (cost > balance) {
+          alert("Insufficient funds!");
+          return;
+        }
+        setBalance((prevBalance) => prevBalance - cost);
+      } else {
+        setBalance((prevBalance) => prevBalance - cost);
+      }
+
+      const newOrder: Order = {
+        id: Date.now(),
+        type,
+        symbol: selectedCrypto,
+        amount,
+        price: currentPrice,
+        timestamp: Date.now(),
+        status: "open",
+        orderDetails,
+      };
+
+      setOrders((prevOrders) => [newOrder, ...prevOrders]);
     }
-
-    const newOrder: Order = {
-      id: Date.now(),
-      type,
-      symbol: selectedCrypto,
-      amount,
-      price: currentPrice,
-      timestamp: Date.now(),
-      status: "open",
-    };
-
-    setOrders((prevOrders) => [newOrder, ...prevOrders]);
   };
 
   const handlePriceUpdate = (price: number) => {
-    setCurrentPrice(price);
+    if (price) {
+      setCurrentPrice(price);
+    }
 
     // Calculate real-time P/L
     const newPL = orders.reduce((total, order) => {
@@ -143,6 +170,55 @@ export default function Home() {
     setBiggestLossTrade(Math.abs(maxLoss));
   };
 
+  // handle limit order execution
+  useEffect(() => {
+    if (!currentPrice) return;
+
+    const copyOrders = [...orders];
+    const limitOrderIndex = copyOrders.findIndex(
+      (order) =>
+        order.status === "pending" && order?.orderDetails?.orderType === "limit"
+    );
+    let limitOrder;
+    if (limitOrderIndex !== -1) {
+      limitOrder = copyOrders[limitOrderIndex];
+    }
+    if (limitOrder) {
+      const cost = limitOrder.amount * limitOrder?.price!;
+      const limitOrderPrice = Math.floor(limitOrder?.price);
+      const flooredCurrentPrice = Math.floor(currentPrice);
+
+      if (
+        limitOrder.type === "buy" &&
+        (flooredCurrentPrice === limitOrderPrice ||
+          flooredCurrentPrice - 1 === limitOrderPrice - 1 ||
+          flooredCurrentPrice + 1 === limitOrderPrice + 1)
+      ) {
+        if (cost > balance) {
+          alert("Insufficient funds!");
+          return;
+        }
+        setBalance((prevBalance) => prevBalance - cost);
+        // update order
+        limitOrder.status = "open";
+        copyOrders[limitOrderIndex] = limitOrder;
+        setOrders(copyOrders);
+      } else {
+        if (
+          flooredCurrentPrice === limitOrderPrice ||
+          flooredCurrentPrice - 0.5 === limitOrderPrice - 0.5 ||
+          flooredCurrentPrice + 0.5 === limitOrderPrice + 0.5
+        ) {
+          setBalance((prevBalance) => prevBalance - cost);
+          // update order
+          limitOrder.status = "open";
+          copyOrders[limitOrderIndex] = limitOrder;
+          setOrders(copyOrders);
+        }
+      }
+    }
+  }, [currentPrice]);
+
   useEffect(() => {
     updateTradingSummary();
   }, [
@@ -160,7 +236,7 @@ export default function Home() {
   const handleSquareOff = (orderId: number) => {
     if (currentPrice === null) return;
     const prevOrders = [...orders];
-    const ordersUpdate = prevOrders.map((order) => {
+    const ordersUpdate: Order[] = prevOrders.map((order) => {
       if (order.id === orderId && order.status === "open") {
         const profit =
           order.type === "buy"
@@ -194,6 +270,47 @@ export default function Home() {
     setOrders(ordersUpdate);
   };
 
+  useEffect(() => {
+    if (!currentPrice) return;
+
+    const copyOrders = [...orders];
+    const openOrderIndex = copyOrders.findIndex(
+      (order) => order.status === "open"
+    );
+    let order;
+    if (openOrderIndex !== -1) {
+      order = copyOrders[openOrderIndex];
+    }
+
+    // handle sl
+    if (order && order?.orderDetails?.stopLoss) {
+      const sl = Math.floor(order?.orderDetails?.stopLoss);
+      const flooredCurrentPrice = Math.floor(currentPrice);
+
+      if (
+        sl === flooredCurrentPrice ||
+        sl - 0.5 === flooredCurrentPrice - 0.5 ||
+        sl + 0.5 === flooredCurrentPrice + 0.5
+      ) {
+        handleSquareOff(order.id);
+      }
+    }
+
+    // handle target
+    if (order && order?.orderDetails?.target) {
+      const target = Math.floor(order?.orderDetails?.target);
+      const flooredCurrentPrice = Math.floor(currentPrice);
+
+      if (
+        target === flooredCurrentPrice ||
+        target - 0.5 === flooredCurrentPrice - 0.5 ||
+        target + 0.5 === flooredCurrentPrice + 0.5
+      ) {
+        handleSquareOff(order.id);
+      }
+    }
+  }, [currentPrice]);
+
   const handleDeleteOrder = (orderId: number) => {
     setOrders((prevOrders) =>
       prevOrders.filter((order) => order.id !== orderId)
@@ -208,7 +325,6 @@ export default function Home() {
       return total;
     }, 0);
   };
-
   return (
     <div className="mx-auto px-4 py-8 my-4">
       <h1 className="text-3xl font-bold mb-6">Crypto Paper Trading</h1>
