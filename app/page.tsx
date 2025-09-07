@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import TradingViewChart from "./components/TradingViewChart";
 import TradingInterface from "./components/TradingInterface";
 import Portfolio from "./components/Portfolio";
@@ -128,24 +128,26 @@ export default function Home() {
     }
   };
 
-  const handlePriceUpdate = (price: number) => {
-    if (price) {
-      setCurrentPrice(price);
-    }
-
-    // Calculate real-time P/L
-    const newPL = orders.reduce((total, order) => {
-      if (order.status === "open" && order.symbol === selectedCrypto) {
-        const diff = price - order.price;
-        const orderPL = diff * order.amount * (order.type === "buy" ? 1 : -1);
-        return total + orderPL;
+  const handlePriceUpdate = useCallback(
+    (price: number) => {
+      if (price) {
+        setCurrentPrice(price);
       }
-      return total + (order.profit || 0);
-    }, 0);
 
-    setRealtimePL(newPL);
-  };
+      // Calculate real-time P/L
+      const newPL = orders.reduce((total, order) => {
+        if (order.status === "open" && order.symbol === selectedCrypto) {
+          const diff = price - order.price;
+          const orderPL = diff * order.amount * (order.type === "buy" ? 1 : -1);
+          return total + orderPL;
+        }
+        return total + (order.profit || 0);
+      }, 0);
 
+      setRealtimePL(newPL);
+    },
+    [selectedCrypto]
+  );
   const updateTradingSummary = () => {
     let profitable = 0;
     let loss = 0;
@@ -317,14 +319,6 @@ export default function Home() {
     );
   };
 
-  const calculateOverallProfitLoss = () => {
-    return orders.reduce((total, order) => {
-      if (order.status === "closed" && order.profit !== undefined) {
-        return total + order.profit;
-      }
-      return total;
-    }, 0);
-  };
   return (
     <div className="mx-auto px-4 py-8 my-4">
       <h1 className="text-3xl font-bold mb-6">Crypto Paper Trading</h1>
@@ -343,6 +337,8 @@ export default function Home() {
             selectedCrypto={selectedCrypto}
             onCryptoChange={setSelectedCrypto}
             cryptocurrencies={CRYPTOCURRENCIES}
+            onSquareOff={handleSquareOff}
+            orders={orders}
           />
           <Portfolio balance={balance} onAddMoney={handleAddMoney} />
         </div>

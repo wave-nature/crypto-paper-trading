@@ -4,6 +4,9 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import useStore from "@/store";
+import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
+import { Order } from "@/types";
 
 interface TradingInterfaceProps {
   onTrade: (
@@ -19,15 +22,19 @@ interface TradingInterfaceProps {
   currentPrice: number | null;
   selectedCrypto: string;
   onCryptoChange: (crypto: string) => void;
+  onSquareOff: (orderId: number) => void;
+  orders: Order[];
   cryptocurrencies: string[];
 }
 
 export default function TradingInterface({
-  onTrade,
   currentPrice,
   selectedCrypto,
-  onCryptoChange,
+  orders,
   cryptocurrencies,
+  onTrade,
+  onCryptoChange,
+  onSquareOff,
 }: TradingInterfaceProps) {
   const [amount, setAmount] = useState("");
   const [orderType, setOrderType] = useState<"market" | "limit">("market");
@@ -71,6 +78,8 @@ export default function TradingInterface({
   };
 
   const profitLoss = pnl.toFixed(2);
+  // open order
+  const order = orders.find((order) => order.status === "open");
 
   return (
     <Card className="h-full">
@@ -166,12 +175,28 @@ export default function TradingInterface({
               {currentPrice ? currentPrice.toFixed(2) : "Loading..."}
             </p>
           </div>
-          <div className="flex align-center gap-3">
-            <span>P/L:</span>
-            <span className={pnl > 0 ? "text-green-500" : "text-red-500"}>
-              {pnl && `${profitLoss.startsWith("-") ? "" : "+"}$${profitLoss}`}
-            </span>
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span>P/L:</span>
+              <span className={pnl > 0 ? "text-green-500" : "text-red-500"}>
+                {`${profitLoss.startsWith("-") ? "" : "+"}$${profitLoss}`}
+              </span>
+            </div>
+
+            <div className="flex space-x-2">
+              {order && (
+                <Button
+                  onClick={() => onSquareOff(order.id)}
+                  size="icon"
+                  variant="outline"
+                >
+                  <X className="h-2 w-2" />
+                </Button>
+              )}
+            </div>
           </div>
+
           <div className="flex justify-between">
             <button
               onClick={() => handleTrade("buy")}

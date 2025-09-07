@@ -38,6 +38,16 @@ export default function OrderTable({
   const [isCardView, setIsCardView] = useState(false);
   const { setPnL } = useStore();
 
+  // pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  const totalPages = Math.ceil(orders.length / itemsPerPage);
+
+  const paginatedOrders = orders.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   const calculateProfitLoss = (order: Order) => {
     if (order.status === "pending") return "N/A";
     if (order.status === "closed" && order.profit !== undefined) {
@@ -56,7 +66,6 @@ export default function OrderTable({
   };
 
   useEffect(() => {
-    // open order
     const order = orders.find((order) => order.status === "open");
     if (!order) return;
 
@@ -66,7 +75,7 @@ export default function OrderTable({
 
   const renderCardView = () => (
     <div className="space-y-4">
-      {orders.map((order) => {
+      {paginatedOrders.map((order) => {
         const profitLoss = calculateProfitLoss(order);
         const profitLossClass = getProfitLossClass(profitLoss);
 
@@ -139,7 +148,7 @@ export default function OrderTable({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {orders.map((order) => {
+        {paginatedOrders.map((order) => {
           const profitLoss = calculateProfitLoss(order);
           const profitLossClass = getProfitLossClass(profitLoss);
           return (
@@ -242,7 +251,37 @@ export default function OrderTable({
           Overall P/L: {overallProfitLoss >= 0 ? "+" : "-"}$
           {Math.abs(overallProfitLoss).toFixed(2)}
         </div>
+
         {isCardView ? renderCardView() : renderTableView()}
+
+        {/* Pagination controls */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-2 mt-6">
+            <Button
+              onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+              disabled={currentPage === 1}
+              variant="outline"
+            >
+              Prev
+            </Button>
+            {Array.from({ length: totalPages }).map((_, i) => (
+              <Button
+                key={i}
+                onClick={() => setCurrentPage(i + 1)}
+                variant={currentPage === i + 1 ? "default" : "outline"}
+              >
+                {i + 1}
+              </Button>
+            ))}
+            <Button
+              onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              variant="outline"
+            >
+              Next
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
