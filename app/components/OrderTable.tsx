@@ -199,7 +199,11 @@ export default function OrderTable({
               <TableCell className={profitLossClass}>
                 {profitLoss === "N/A"
                   ? profitLoss
-                  : `${profitLoss.startsWith("-") ? "-$" : "+$"}${profitLoss}`}
+                  : `${
+                      profitLoss.startsWith("-")
+                        ? "-$" + profitLoss.replace("-", "")
+                        : "+$" + profitLoss
+                    }`}
               </TableCell>
               <TableCell>
                 <div className="flex space-x-2">
