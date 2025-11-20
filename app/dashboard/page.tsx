@@ -1,7 +1,8 @@
 "use server";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/utils/supabase/server";
-import { AUTH_LOGIN, DASHBOARD } from "@/constants/navigation";
+import Home from "../components/Home";
+import { AUTH_LOGIN } from "@/constants/navigation";
 
 export default async function Page() {
   const supabase = await createSupabaseServerClient();
@@ -9,7 +10,7 @@ export default async function Page() {
 
   if (!data.user) {
     redirect(AUTH_LOGIN);
-  } else {
-    redirect(DASHBOARD);
-  }
+  } 
+
+  return <Home/>
 }

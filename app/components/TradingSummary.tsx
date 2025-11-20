@@ -19,15 +19,15 @@ export default function TradingSummary({
   const lossPercentage = (lossTradesCount / totalTradesCount) * 100 || 0
 
   return (
-    <Card className="mb-6">
+    <Card className="mb-6 border-violet-500/20 bg-gradient-to-br from-violet-50/50 to-white dark:from-violet-950/20 dark:to-background">
       <CardHeader>
-        <CardTitle>Trading Summary</CardTitle>
+        <CardTitle className="bg-gradient-to-r from-violet-600 to-violet-400 bg-clip-text text-transparent">Trading Summary</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <div>
             <h3 className="text-sm font-medium text-muted-foreground">Profitable Trades</h3>
-            <p className="text-2xl font-bold">
+            <p className="text-2xl font-bold text-violet-600">
               {profitableTradesCount} ({profitablePercentage.toFixed(2)}%)
             </p>
           </div>
@@ -39,7 +39,7 @@ export default function TradingSummary({
           </div>
           <div>
             <h3 className="text-sm font-medium text-muted-foreground">Total Trades</h3>
-            <p className="text-2xl font-bold">{totalTradesCount}</p>
+            <p className="text-2xl font-bold text-violet-600">{totalTradesCount}</p>
           </div>
           <div>
             <h3 className="text-sm font-medium text-muted-foreground">Most Profitable Trade</h3>
@@ -54,4 +54,3 @@ export default function TradingSummary({
     </Card>
   )
 }
-

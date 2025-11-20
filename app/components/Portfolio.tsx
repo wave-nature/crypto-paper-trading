@@ -24,15 +24,15 @@ export default function Portfolio({ balance, onAddMoney }: PortfolioProps) {
   }
 
   return (
-    <Card className="h-full">
+    <Card className="h-full border-violet-500/20 bg-gradient-to-br from-violet-50/50 to-white dark:from-violet-950/20 dark:to-background">
       <CardHeader>
-        <CardTitle>Portfolio</CardTitle>
+        <CardTitle className="bg-gradient-to-r from-violet-600 to-violet-400 bg-clip-text text-transparent">Portfolio</CardTitle>
       </CardHeader>
       <CardContent className="p-6 h-full flex flex-col justify-between">
         <div className="space-y-6">
           <div>
             <h3 className="font-semibold">Cash Balance</h3>
-            <p className="text-2xl font-bold">${balance.toFixed(2)}</p>
+            <p className="text-2xl font-bold text-violet-600">${balance.toFixed(2)}</p>
           </div>
           <div>
             <h3 className="font-semibold mb-2">Add Money</h3>
@@ -42,8 +42,9 @@ export default function Portfolio({ balance, onAddMoney }: PortfolioProps) {
                 value={addAmount}
                 onChange={(e) => setAddAmount(e.target.value)}
                 placeholder="Amount to add"
+                className="focus-visible:ring-violet-500"
               />
-              <Button onClick={handleAddMoney}>Add</Button>
+              <Button onClick={handleAddMoney} className="bg-violet-500 hover:bg-violet-600">Add</Button>
             </div>
           </div>
         </div>
@@ -51,4 +52,3 @@ export default function Portfolio({ balance, onAddMoney }: PortfolioProps) {
     </Card>
   )
 }
-

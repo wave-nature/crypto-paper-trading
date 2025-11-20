@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import useStore from "@/store";
 import { Button } from "@/components/ui/button";
-import { X } from 'lucide-react';
+import { X } from "lucide-react";
 import { Order } from "@/types";
 
 interface TradingInterfaceProps {
@@ -27,7 +27,7 @@ interface TradingInterfaceProps {
   cryptocurrencies: string[];
 }
 
-export default function TradingInterface({
+export default function TradingInterfaceHorizontal({
   currentPrice,
   selectedCrypto,
   orders,
@@ -82,18 +82,14 @@ export default function TradingInterface({
   const order = orders.find((order) => order.status === "open");
 
   return (
-    <Card className="h-full border-violet-500/20 bg-gradient-to-br from-violet-50/50 to-white dark:from-violet-950/20 dark:to-background">
-      <CardHeader>
-        <CardTitle className="bg-gradient-to-r from-violet-600 to-violet-400 bg-clip-text text-transparent">Trading Interface</CardTitle>
-      </CardHeader>
-      <CardContent className="p-6">
-        <div className="space-y-4">
+    <div className="border border-violet-500/20 bg-gradient-to-br from-violet-50/50 to-white dark:from-violet-950/20 dark:to-background py-0 m-0 rounded-lg">
+      <div className="px-2 w-full">
+        <div className="space-y-2 flex items-center justify-between w-full">
           <div>
-            <label className="block mb-1">Cryptocurrency:</label>
             <select
               value={selectedCrypto}
               onChange={(e) => onCryptoChange(e.target.value)}
-              className="w-full p-2 border border-violet-200 rounded focus:outline-none focus:ring-2 focus:ring-violet-500"
+              className="w-full p-1 border border-violet-200 rounded focus:outline-none focus:ring-2 focus:ring-violet-500"
             >
               {cryptocurrencies.map((crypto) => (
                 <option key={crypto} value={crypto}>
@@ -108,23 +104,30 @@ export default function TradingInterface({
             onValueChange={(value: "market" | "limit") => {
               if (value) setOrderType(value);
             }}
-            className="w-full grid grid-cols-2"
+            className="flex m-0"
           >
-            <ToggleGroupItem value="market" aria-label="Select market order" className="data-[state=on]:bg-violet-500 data-[state=on]:text-white">
+            <ToggleGroupItem
+              value="market"
+              aria-label="Select market order"
+              className="data-[state=on]:bg-violet-500 data-[state=on]:text-white px-2 py-1 h-8 m-0"
+            >
               Market
             </ToggleGroupItem>
-            <ToggleGroupItem value="limit" aria-label="Select limit order" className="data-[state=on]:bg-violet-500 data-[state=on]:text-white">
+            <ToggleGroupItem
+              value="limit"
+              aria-label="Select limit order"
+              className="data-[state=on]:bg-violet-500 data-[state=on]:text-white px-2 py-1 h-8 m-0"
+            >
               Limit
             </ToggleGroupItem>
           </ToggleGroup>
           <div>
-            <label className="block mb-1">Amount ({selectedCrypto}):</label>
             <input
               type="number"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="w-full p-2 border border-violet-200 rounded focus:outline-none focus:ring-2 focus:ring-violet-500"
-              placeholder="e.g., 0.1"
+              className="w-full p-1 border border-violet-200 rounded focus:outline-none focus:ring-2 focus:ring-violet-500 h-8"
+              placeholder="Amount ($)"
               step="0.0001"
               min="0"
             />
@@ -132,12 +135,11 @@ export default function TradingInterface({
           <>
             {orderType === "limit" && (
               <div>
-                <label className="block mb-1">Buy Price:</label>
                 <input
                   type="number"
                   value={limitPrice}
                   onChange={(e) => setLimitPrice(e.target.value)}
-                  className="w-full p-2 border border-violet-200 rounded focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  className="w-full p-1 border border-violet-200 rounded focus:outline-none focus:ring-2 focus:ring-violet-500 h-8"
                   placeholder="Set a price for your limit order"
                   step="0.01"
                   min="0"
@@ -145,75 +147,70 @@ export default function TradingInterface({
               </div>
             )}
             <div>
-              <label className="block mb-1">Stop Loss (optional):</label>
               <input
                 type="number"
                 value={stopLoss}
                 onChange={(e) => setStopLoss(e.target.value)}
-                className="w-full p-2 border border-violet-200 rounded focus:outline-none focus:ring-2 focus:ring-violet-500"
-                placeholder="e.g., 45000"
+                className="w-full p-1 border border-violet-200 rounded focus:outline-none focus:ring-2 focus:ring-violet-500 h-8"
+                placeholder="Stop Loss (optional)"
                 step="0.01"
                 min="0"
               />
             </div>
             <div>
-              <label className="block mb-1">Target (optional):</label>
               <input
                 type="number"
                 value={target}
                 onChange={(e) => setTarget(e.target.value)}
-                className="w-full p-2 border border-violet-200 rounded focus:outline-none focus:ring-2 focus:ring-violet-500"
-                placeholder="e.g., 55000"
+                className="w-full p-1 border border-violet-200 rounded focus:outline-none focus:ring-2 focus:ring-violet-500 h-8"
+                placeholder="Target (optional)"
                 step="0.01"
                 min="0"
               />
             </div>
           </>
           <div>
-            <p className="mb-2">
-              Current Price: $
-              {currentPrice ? currentPrice.toFixed(2) : "Loading..."}
-            </p>
+            <p>${currentPrice ? currentPrice.toFixed(2) : "0.00"}</p>
           </div>
 
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 mr-2">
               <span>P/L:</span>
               <span className={pnl > 0 ? "text-green-500" : "text-red-500"}>
-                {`${profitLoss.startsWith("-") ? "" : "+"}$${profitLoss}`}
+                {`${
+                  profitLoss.startsWith("-") ? "-" : "+"
+                }$${profitLoss.replace("-", "")}`}
               </span>
             </div>
 
-            <div className="flex space-x-2">
-              {order && (
-                <Button
-                  onClick={() => onSquareOff(order.id)}
-                  size="icon"
-                  variant="outline"
-                  className="border-violet-500 text-violet-500 hover:bg-violet-50"
-                >
-                  <X className="h-2 w-2" />
-                </Button>
-              )}
-            </div>
+            {order && (
+              <Button
+                onClick={() => onSquareOff(order.id)}
+                size="icon"
+                variant="outline"
+                className="border-violet-500 text-violet-500 hover:bg-violet-50 p-1"
+              >
+                <X />
+              </Button>
+            )}
           </div>
 
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center gap-3">
             <button
               onClick={() => handleTrade("buy")}
-              className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded transition-colors"
+              className="bg-green-500 hover:bg-green-600 text-white px-4 py-1 rounded transition-colors"
             >
               Buy
             </button>
             <button
               onClick={() => handleTrade("sell")}
-              className="bg-red-500 text-white px-4 py-2 rounded"
+              className="bg-red-500 text-white px-4 py-1 rounded"
             >
               Sell
             </button>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

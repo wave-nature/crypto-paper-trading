@@ -14,7 +14,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { X, Trash2 } from "lucide-react";
+import { X, Trash2 } from 'lucide-react';
 import { Order } from "@/types";
 import useStore from "@/store";
 
@@ -80,9 +80,9 @@ export default function OrderTable({
         const profitLossClass = getProfitLossClass(profitLoss);
 
         return (
-          <Card key={order.id} className="p-4">
+          <Card key={order.id} className="p-4 border-violet-200">
             <div className="flex justify-between items-center mb-2">
-              <Badge variant={order.type === "buy" ? "default" : "secondary"}>
+              <Badge variant={order.type === "buy" ? "default" : "secondary"} className={order.type === "buy" ? "bg-violet-500" : ""}>
                 {order.type.toUpperCase()}
               </Badge>
               <Badge
@@ -112,6 +112,7 @@ export default function OrderTable({
                   onClick={() => onSquareOff(order.id)}
                   size="icon"
                   variant="outline"
+                  className="border-violet-500 text-violet-500 hover:bg-violet-50"
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -120,6 +121,7 @@ export default function OrderTable({
                 onClick={() => onDeleteOrder(order.id)}
                 size="icon"
                 variant="outline"
+                className="border-violet-500 text-violet-500 hover:bg-violet-50"
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
@@ -158,7 +160,7 @@ export default function OrderTable({
                   style={{
                     background:
                       order?.orderDetails?.orderType === "limit"
-                        ? "gray"
+                        ? "rgb(139, 92, 246)"
                         : "black",
                   }}
                 >
@@ -170,7 +172,7 @@ export default function OrderTable({
                   style={{
                     background:
                       order.type === "buy"
-                        ? "rgb(34, 197, 94)"
+                        ? "rgb(139, 92, 246)"
                         : "rgb(239, 68, 68)",
                   }}
                 >
@@ -212,6 +214,7 @@ export default function OrderTable({
                       onClick={() => onSquareOff(order.id)}
                       size="icon"
                       variant="outline"
+                      className="border-violet-500 text-violet-500 hover:bg-violet-50"
                     >
                       <X className="h-4 w-4" />
                     </Button>
@@ -220,6 +223,7 @@ export default function OrderTable({
                     onClick={() => onDeleteOrder(order.id)}
                     size="icon"
                     variant="outline"
+                    className="border-violet-500 text-violet-500 hover:bg-violet-50"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -233,9 +237,9 @@ export default function OrderTable({
   );
 
   return (
-    <Card>
+    <Card className="border-violet-500/20 bg-gradient-to-br from-violet-50/50 to-white dark:from-violet-950/20 dark:to-background">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-2xl font-bold">Order History</CardTitle>
+        <CardTitle className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-violet-400 bg-clip-text text-transparent">Order History</CardTitle>
         <div className="flex items-center space-x-2">
           <Label htmlFor="view-toggle">Table View</Label>
           <Switch
@@ -265,6 +269,7 @@ export default function OrderTable({
               onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
               disabled={currentPage === 1}
               variant="outline"
+              className="border-violet-500 text-violet-500 hover:bg-violet-50"
             >
               Prev
             </Button>
@@ -273,6 +278,7 @@ export default function OrderTable({
                 key={i}
                 onClick={() => setCurrentPage(i + 1)}
                 variant={currentPage === i + 1 ? "default" : "outline"}
+                className={currentPage === i + 1 ? "bg-violet-500 hover:bg-violet-600" : "border-violet-500 text-violet-500 hover:bg-violet-50"}
               >
                 {i + 1}
               </Button>
@@ -281,6 +287,7 @@ export default function OrderTable({
               onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
               disabled={currentPage === totalPages}
               variant="outline"
+              className="border-violet-500 text-violet-500 hover:bg-violet-50"
             >
               Next
             </Button>
@@ -288,5 +295,5 @@ export default function OrderTable({
         )}
       </CardContent>
     </Card>
-  );
+  )
 }
