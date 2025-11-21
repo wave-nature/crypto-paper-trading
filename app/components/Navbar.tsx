@@ -48,9 +48,7 @@ export default function Navbar({
   const [addAmount, setAddAmount] = useState("");
   const supabase = createSupabaseBrowserClient();
   const { user } = useAuthStore();
-
-  console.log("user", user);
-
+  
   const handleAddMoney = () => {
     const amount = parseFloat(addAmount);
     if (amount && amount > 0) {

@@ -1,17 +1,18 @@
 export interface Order {
-  id: number;
+  id?: string;
   type: "buy" | "sell";
   symbol: string;
-  amount: number;
+  quantity: number;
   price: number;
-  timestamp: number;
+  timestamp: string;
   status: "open" | "closed" | "pending";
-  orderDetails: {
+  order_details: {
     orderType: "market" | "limit";
     limitPrice?: number;
     stopLoss?: number;
     target?: number;
   };
-  closedPrice?: number;
+  closed_price?: number;
   profit?: number;
+  user_id?: string;
 }

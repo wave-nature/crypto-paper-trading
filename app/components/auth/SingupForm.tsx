@@ -75,10 +75,9 @@ export function SignupForm() {
         setUser({
           id: data.user.id,
           name: data.user.user_metadata.name,
-          email: data.user.email,
+          email: data.user.email!,
           accountId: account.id,
           balance: account.balance,
-          lastPnl: account.last_pnl,
           username: account.username,
         });
 

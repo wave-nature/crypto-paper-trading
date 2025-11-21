@@ -1,8 +1,17 @@
 import { create } from "zustand";
 
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  balance: number;
+  username: string;
+  accountId: string;
+}
+
 type AuthState = {
-  user: object | null;
-  setUser: (user: object | null) => void;
+  user: User | null;
+  setUser: (user: User | null) => void;
 };
 
 const useAuthStore = create<AuthState>()((set) => ({
@@ -10,4 +19,4 @@ const useAuthStore = create<AuthState>()((set) => ({
   setUser: (user) => set(() => ({ user })),
 }));
 
-export default useAuthStore
+export default useAuthStore;

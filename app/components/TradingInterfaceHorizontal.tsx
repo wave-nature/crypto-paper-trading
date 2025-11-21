@@ -17,12 +17,12 @@ interface TradingInterfaceProps {
       limitPrice?: number;
       stopLoss?: number;
       target?: number;
-    }
+    },
   ) => void;
   currentPrice: number | null;
   selectedCrypto: string;
   onCryptoChange: (crypto: string) => void;
-  onSquareOff: (orderId: number) => void;
+  onSquareOff: (orderId: string) => void;
   orders: Order[];
   cryptocurrencies: string[];
 }
@@ -185,7 +185,7 @@ export default function TradingInterfaceHorizontal({
 
             {order && (
               <Button
-                onClick={() => onSquareOff(order.id)}
+                onClick={() => onSquareOff(order?.id || "")}
                 size="icon"
                 variant="outline"
                 className="border-violet-500 text-violet-500 hover:bg-violet-50 p-1"

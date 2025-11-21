@@ -11,6 +11,16 @@ export const LOGGED_OUT_USER = "User logged out successfully!";
 export const PASSWORD_MISMATCH = "Password didn't match";
 export const ALL_FIELDS_ARE_REQUIRED = "Please fill all fields";
 
+export const ORDER_NOT_PLACED = "Order not placed";
+export const ORDER_PLACED_SUCCESSFULLY = "Order placed successfully";
+export const ORDER_SQUARED_OFF = "Order squared off successfully";
+export const ORDER_UPDATED_SUCCESSFULLY = "Order updated successfully";
+export const ORDER_SQUARED_OFF_SUCCESSFULLY = "Order squared off successfully";
+export const ORDER_NOT_UPDATED = "Order not updated";
+export const ORDER_NOT_DELETED = "Order not deleted";
+export const ORDER_DELETED_SUCCESSFULLY = "Order deleted successfully";
+export const ORDERS_NOT_FETCHED = "Error fetching orders";
+
 export const SOMETHING_WENT_WRONG = "Something went wrong!";
 
 export function created(module: string) {

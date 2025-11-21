@@ -47,7 +47,6 @@ export default function SettingsPageContent() {
 
   return (
     <>
-      <Navbar balance={1} currentProfitLoss={1} onAddMoney={() => {}} />
       <div className="flex min-h-screen bg-gradient-to-br from-violet-50 via-purple-50 to-violet-100">
         {/* Sidebar */}
         <aside

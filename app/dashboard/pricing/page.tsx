@@ -19,8 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
-import Navbar from "@/app/components/Navbar"
-
+import Navbar from "@/app/components/Navbar";
 
 const sidebarItems = [
   { icon: TrendingUp, label: "Positions", href: "/positions" },
@@ -42,7 +41,6 @@ export default function PricingPageContent() {
 
   return (
     <>
-      <Navbar currentProfitLoss={1} onAddMoney={() => {}} balance={1} />
       <div className="flex min-h-screen bg-gradient-to-br from-violet-50 via-purple-50 to-violet-100">
         {/* Sidebar */}
         <aside

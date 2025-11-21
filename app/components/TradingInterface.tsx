@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import useStore from "@/store";
 import { Button } from "@/components/ui/button";
-import { X } from 'lucide-react';
+import { X } from "lucide-react";
 import { Order } from "@/types";
 
 interface TradingInterfaceProps {
@@ -17,12 +17,12 @@ interface TradingInterfaceProps {
       limitPrice?: number;
       stopLoss?: number;
       target?: number;
-    }
+    },
   ) => void;
   currentPrice: number | null;
   selectedCrypto: string;
   onCryptoChange: (crypto: string) => void;
-  onSquareOff: (orderId: number) => void;
+  onSquareOff: (orderId: string) => void;
   orders: Order[];
   cryptocurrencies: string[];
 }
@@ -84,7 +84,9 @@ export default function TradingInterface({
   return (
     <Card className="h-full border-violet-500/20 bg-gradient-to-br from-violet-50/50 to-white dark:from-violet-950/20 dark:to-background">
       <CardHeader>
-        <CardTitle className="bg-gradient-to-r from-violet-600 to-violet-400 bg-clip-text text-transparent">Trading Interface</CardTitle>
+        <CardTitle className="bg-gradient-to-r from-violet-600 to-violet-400 bg-clip-text text-transparent">
+          Trading Interface
+        </CardTitle>
       </CardHeader>
       <CardContent className="p-6">
         <div className="space-y-4">
@@ -110,10 +112,18 @@ export default function TradingInterface({
             }}
             className="w-full grid grid-cols-2"
           >
-            <ToggleGroupItem value="market" aria-label="Select market order" className="data-[state=on]:bg-violet-500 data-[state=on]:text-white">
+            <ToggleGroupItem
+              value="market"
+              aria-label="Select market order"
+              className="data-[state=on]:bg-violet-500 data-[state=on]:text-white"
+            >
               Market
             </ToggleGroupItem>
-            <ToggleGroupItem value="limit" aria-label="Select limit order" className="data-[state=on]:bg-violet-500 data-[state=on]:text-white">
+            <ToggleGroupItem
+              value="limit"
+              aria-label="Select limit order"
+              className="data-[state=on]:bg-violet-500 data-[state=on]:text-white"
+            >
               Limit
             </ToggleGroupItem>
           </ToggleGroup>
@@ -187,7 +197,7 @@ export default function TradingInterface({
             <div className="flex space-x-2">
               {order && (
                 <Button
-                  onClick={() => onSquareOff(order.id)}
+                  onClick={() => onSquareOff(order.id || "")}
                   size="icon"
                   variant="outline"
                   className="border-violet-500 text-violet-500 hover:bg-violet-50"

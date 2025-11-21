@@ -24,7 +24,7 @@ import {
   LOADING_LOGIN,
   LOGGED_IN_SUCCESSFULLY,
 } from "@/constants/toastMessages";
-import useAuthStore from "@/store/useAuthStoreuthStore";
+import useAuthStore from "@/store/useAuthStore";
 
 export function LoginForm() {
   const [email, setEmail] = useState("");
@@ -67,10 +67,9 @@ export function LoginForm() {
         setUser({
           id: data.user.id,
           name: data.user.user_metadata.name,
-          email: data.user.email,
+          email: data.user.email!,
           accountId: account.id,
           balance: account.balance,
-          lastPnl: account.last_pnl,
           username: account.username,
         });
         toast.success(LOGGED_IN_SUCCESSFULLY);

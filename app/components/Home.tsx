@@ -10,6 +10,19 @@ import TradingSummary from "./TradingSummary";
 import Navbar from "./Navbar";
 import { Order } from "@/types";
 import TradingInterfaceHorizontal from "./TradingInterfaceHorizontal";
+import useAuthStore from "@/store/useAuthStore";
+import useOrders from "@/store/useOrders";
+import toast from "react-hot-toast";
+import {
+  ORDER_DELETED_SUCCESSFULLY,
+  ORDER_NOT_DELETED,
+  ORDER_NOT_PLACED,
+  ORDER_NOT_UPDATED,
+  ORDER_PLACED_SUCCESSFULLY,
+  ORDER_UPDATED_SUCCESSFULLY,
+  ORDERS_NOT_FETCHED,
+} from "@/constants/toastMessages";
+import useOrdersHook from "@/hooks/useOrders";
 
 const CRYPTOCURRENCIES = [
   "BTC",
@@ -24,34 +37,13 @@ const CRYPTOCURRENCIES = [
 ];
 
 export default function Home() {
-  const [portfolio, setPortfolio] = useState<{ [key: string]: number }>(() => {
-    if (typeof window !== "undefined") {
-      const savedPortfolio = localStorage.getItem("portfolio");
-      return savedPortfolio
-        ? JSON.parse(savedPortfolio)
-        : Object.fromEntries(CRYPTOCURRENCIES.map((crypto) => [crypto, 0]));
-    }
-    return Object.fromEntries(CRYPTOCURRENCIES.map((crypto) => [crypto, 0]));
-  });
-
-  const [balance, setBalance] = useState(() => {
-    if (typeof window !== "undefined") {
-      const savedBalance = localStorage.getItem("balance");
-      return savedBalance ? Number.parseFloat(savedBalance) : 1_000_000;
-    }
-    return 1_000_000;
-  });
-
+  const { user } = useAuthStore();
+  const { orders, setOrders } = useOrders();
+  const { saveOrder, updateOrder, deleteOrder } = useOrdersHook();
+  const [balance, setBalance] = useState(0);
   const [selectedCrypto, setSelectedCrypto] = useState("BTC");
   const [fullChart, setFullChart] = useState(false);
   const [currentPrice, setCurrentPrice] = useState<number | null>(null);
-  const [orders, setOrders] = useState<Order[]>(() => {
-    if (typeof window !== "undefined") {
-      const savedOrders = localStorage.getItem("orders");
-      return savedOrders ? JSON.parse(savedOrders) : [];
-    }
-    return [];
-  });
   const [realtimePL, setRealtimePL] = useState(0);
   const [profitableTradesCount, setProfitableTradesCount] = useState(0);
   const [lossTradesCount, setLossTradesCount] = useState(0);
@@ -59,76 +51,77 @@ export default function Home() {
   const [biggestLossTrade, setBiggestLossTrade] = useState(0);
 
   useEffect(() => {
-    localStorage.setItem("portfolio", JSON.stringify(portfolio));
-    localStorage.setItem("balance", balance.toString());
-    localStorage.setItem("orders", JSON.stringify(orders));
-  }, [portfolio, balance, orders]);
+    if (user) {
+      setBalance(user.balance);
+    }
+  }, [user?.balance]);
 
   const handleTrade = (
     type: "buy" | "sell",
-    amount: number,
+    quantity: number,
     orderDetails: {
       orderType: "market" | "limit";
       limitPrice?: number;
       stopLoss?: number;
       target?: number;
-    }
+    },
   ) => {
     if (currentPrice === null) return;
     // if any order is still open return
     if (
       orders.some(
-        (order) => order.status === "open" || order.status === "pending"
+        (order) => order.status === "open" || order.status === "pending",
       )
     ) {
       alert("Please square off all open orders before placing a new order");
       return;
     }
     if (orderDetails.orderType === "limit") {
-      const cost = amount * orderDetails?.limitPrice!;
-      if (type === "buy") {
-        if (cost > balance) {
-          alert("Insufficient funds!");
-          return;
-        }
+      const cost = quantity * orderDetails?.limitPrice!;
+      if (cost > balance) {
+        alert("Insufficient funds!");
+        return;
       }
 
+      setBalance((prevBalance) => prevBalance - cost);
+
       const newOrder: Order = {
-        id: Date.now(),
         type,
         symbol: selectedCrypto,
-        amount,
+        quantity,
         price: orderDetails.limitPrice!,
-        timestamp: Date.now(),
+        timestamp: new Date().toISOString(),
         status: "pending",
-        orderDetails,
+        order_details: orderDetails,
+        user_id: user?.id,
       };
 
-      setOrders((prevOrders) => [newOrder, ...prevOrders]);
+      const newOrders = [newOrder, ...orders];
+      setOrders(newOrders);
+      saveOrder(newOrder);
     } else {
-      const cost = amount * currentPrice;
-      if (type === "buy") {
-        if (cost > balance) {
-          alert("Insufficient funds!");
-          return;
-        }
-        setBalance((prevBalance) => prevBalance - cost);
-      } else {
-        setBalance((prevBalance) => prevBalance - cost);
+      const cost = quantity * currentPrice;
+
+      if (cost > balance) {
+        alert("Insufficient funds!");
+        return;
       }
 
+      setBalance((prevBalance) => prevBalance - cost);
+
       const newOrder: Order = {
-        id: Date.now(),
         type,
         symbol: selectedCrypto,
-        amount,
+        quantity,
         price: currentPrice,
-        timestamp: Date.now(),
+        timestamp: new Date().toISOString(),
         status: "open",
-        orderDetails,
+        order_details: orderDetails,
+        user_id: user?.id,
       };
-
-      setOrders((prevOrders) => [newOrder, ...prevOrders]);
+      const newOrders = [newOrder, ...orders];
+      setOrders(newOrders);
+      saveOrder(newOrder);
     }
   };
 
@@ -142,7 +135,8 @@ export default function Home() {
       const newPL = orders.reduce((total, order) => {
         if (order.status === "open" && order.symbol === selectedCrypto) {
           const diff = price - order.price;
-          const orderPL = diff * order.amount * (order.type === "buy" ? 1 : -1);
+          const orderPL =
+            diff * order.quantity * (order.type === "buy" ? 1 : -1);
           return total + orderPL;
         }
         return total + (order.profit || 0);
@@ -150,7 +144,7 @@ export default function Home() {
 
       setRealtimePL(newPL);
     },
-    [selectedCrypto]
+    [selectedCrypto],
   );
   const updateTradingSummary = () => {
     let profitable = 0;
@@ -183,14 +177,15 @@ export default function Home() {
     const copyOrders = [...orders];
     const limitOrderIndex = copyOrders.findIndex(
       (order) =>
-        order.status === "pending" && order?.orderDetails?.orderType === "limit"
+        order.status === "pending" &&
+        order?.order_details?.orderType === "limit",
     );
     let limitOrder;
     if (limitOrderIndex !== -1) {
       limitOrder = copyOrders[limitOrderIndex];
     }
     if (limitOrder) {
-      const cost = limitOrder.amount * limitOrder?.price!;
+      const cost = limitOrder.quantity * limitOrder?.price!;
       const limitOrderPrice = Math.floor(limitOrder?.price);
       const flooredCurrentPrice = Math.floor(currentPrice);
 
@@ -235,24 +230,25 @@ export default function Home() {
     biggestLossTrade,
   ]);
 
-  const handleAddMoney = (amount: number) => {
-    setBalance((prevBalance) => prevBalance + amount);
+  const handleAddMoney = (quantity: number) => {
+    setBalance((prevBalance) => prevBalance + quantity);
   };
 
-  const handleSquareOff = (orderId: number) => {
+  const handleSquareOff = (orderId: string) => {
+    console.log("Square off order:", orderId);
     if (currentPrice === null) return;
     const prevOrders = [...orders];
     const ordersUpdate: Order[] = prevOrders.map((order) => {
       if (order.id === orderId && order.status === "open") {
         const profit =
           order.type === "buy"
-            ? (currentPrice - order.price) * order.amount
-            : (order.price - currentPrice) * order.amount;
+            ? (currentPrice - order.price) * order.quantity
+            : (order.price - currentPrice) * order.quantity;
 
         return {
           ...order,
           status: "closed",
-          closedPrice: currentPrice,
+          closed_price: currentPrice,
           profit,
         };
       }
@@ -261,7 +257,8 @@ export default function Home() {
     });
     // calculate total balance after square off
     const latestClosedOrder = ordersUpdate.sort(
-      (a, b) => b.timestamp - a.timestamp
+      (a, b) =>
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
     )[0];
     let totalBalance = 0;
     if (
@@ -269,11 +266,17 @@ export default function Home() {
       latestClosedOrder.profit !== undefined
     )
       totalBalance =
-        latestClosedOrder.amount * latestClosedOrder.price +
+        latestClosedOrder.quantity * latestClosedOrder.price +
         latestClosedOrder.profit;
 
     setBalance((prevBal) => prevBal + totalBalance);
     setOrders(ordersUpdate);
+
+    // update order in database
+    const order = ordersUpdate.find(
+      (order) => order.id === orderId && order.status === "closed",
+    );
+    if (order) updateOrder(order);
   };
 
   useEffect(() => {
@@ -281,7 +284,7 @@ export default function Home() {
 
     const copyOrders = [...orders];
     const openOrderIndex = copyOrders.findIndex(
-      (order) => order.status === "open"
+      (order) => order.status === "open",
     );
     let order;
     if (openOrderIndex !== -1) {
@@ -289,8 +292,8 @@ export default function Home() {
     }
 
     // handle sl
-    if (order && order?.orderDetails?.stopLoss) {
-      const sl = Math.floor(order?.orderDetails?.stopLoss);
+    if (order && order?.order_details?.stopLoss && order?.id) {
+      const sl = Math.floor(order?.order_details?.stopLoss);
       const flooredCurrentPrice = Math.floor(currentPrice);
 
       if (
@@ -303,8 +306,8 @@ export default function Home() {
     }
 
     // handle target
-    if (order && order?.orderDetails?.target) {
-      const target = Math.floor(order?.orderDetails?.target);
+    if (order && order?.order_details?.target && order?.id) {
+      const target = Math.floor(order?.order_details?.target);
       const flooredCurrentPrice = Math.floor(currentPrice);
 
       if (
@@ -317,19 +320,14 @@ export default function Home() {
     }
   }, [currentPrice]);
 
-  const handleDeleteOrder = (orderId: number) => {
-    setOrders((prevOrders) =>
-      prevOrders.filter((order) => order.id !== orderId)
-    );
+  const handleDeleteOrder = (orderId: string) => {
+    const updatedOrders = orders.filter((order) => order.id !== orderId);
+    setOrders(updatedOrders);
+    deleteOrder(orderId);
   };
 
   return (
     <>
-      <Navbar
-        balance={balance}
-        onAddMoney={handleAddMoney}
-        currentProfitLoss={realtimePL}
-      />
       <div className="mx-auto px-4 py-4">
         <div
           className={`flex items-center ${
