@@ -19,7 +19,7 @@ export default function TradingSummary({
   const lossPercentage = (lossTradesCount / totalTradesCount) * 100 || 0
 
   return (
-    <Card className="mb-6 border-violet-500/20 bg-gradient-to-br from-violet-50/50 to-white dark:from-violet-950/20 dark:to-background">
+    <Card className="border-violet-500/20 bg-gradient-to-br from-violet-50/50 to-white dark:from-violet-950/20 dark:to-background">
       <CardHeader>
         <CardTitle className="bg-gradient-to-r from-violet-600 to-violet-400 bg-clip-text text-transparent">Trading Summary</CardTitle>
       </CardHeader>

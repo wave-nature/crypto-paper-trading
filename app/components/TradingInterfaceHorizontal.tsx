@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import useStore from "@/store";
+import useStore from "@/store/usePositions";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { Order } from "@/types";
@@ -17,7 +17,7 @@ interface TradingInterfaceProps {
       limitPrice?: number;
       stopLoss?: number;
       target?: number;
-    },
+    }
   ) => void;
   currentPrice: number | null;
   selectedCrypto: string;

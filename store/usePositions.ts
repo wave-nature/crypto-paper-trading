@@ -5,9 +5,9 @@ type Store = {
   setPnL: (pnl: number) => void;
 };
 
-const useStore = create<Store>()((set) => ({
+const usePositions = create<Store>()((set) => ({
   pnl: 0,
   setPnL: (pnl) => set(() => ({ pnl })),
 }));
 
-export default useStore
+export default usePositions

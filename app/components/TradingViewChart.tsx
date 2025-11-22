@@ -77,7 +77,7 @@ export default function TradingViewChart({ symbol }: TradingViewChartProps) {
     <div
       id="tradingview_widget"
       ref={containerRef}
-      className="w-full h-[90vh]"
+      className="w-full h-full"
     />
   );
 }

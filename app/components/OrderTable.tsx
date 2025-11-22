@@ -16,9 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { X, Trash2, AlertTriangle } from "lucide-react";
 import { Order } from "@/types";
-import useStore from "@/store";
-import { set } from "react-hook-form";
-import { on } from "node:stream";
+import useStore from "@/store/usePositions";
 
 interface OrderTableProps {
   orders: Order[];
@@ -33,7 +31,6 @@ const tabs = [
   { id: "positions", label: "Positions" },
   { id: "open-orders", label: "Open Orders" },
   { id: "stop-orders", label: "Stop Orders" },
-  { id: "tracker-assets", label: "Tracker Assets" },
   { id: "fills", label: "Fills" },
   { id: "order-history", label: "Order History" },
 ];
@@ -58,7 +55,7 @@ export default function OrderTable({
 
   const paginatedOrders = orders.slice(
     (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage,
+    currentPage * itemsPerPage
   );
 
   const calculateProfitLoss = (order: Order) => {
@@ -117,7 +114,11 @@ export default function OrderTable({
                 <div className="flex items-center gap-3">
                   <Badge
                     variant={order.type === "buy" ? "default" : "secondary"}
-                    className={`text-sm px-3 py-1 ${order.type === "buy" ? "bg-green-500 hover:bg-green-600" : "bg-red-500 hover:bg-red-600"}`}
+                    className={`text-sm px-3 py-1 ${
+                      order.type === "buy"
+                        ? "bg-green-500 hover:bg-green-600"
+                        : "bg-red-500 hover:bg-red-600"
+                    }`}
                   >
                     {order.type.toUpperCase()}
                   </Badge>
@@ -129,7 +130,13 @@ export default function OrderTable({
                   </Badge>
                 </div>
                 {order?.order_details?.orderType && (
-                  <Badge className="bg-violet-600 text-white text-xs px-2 py-1">
+                  <Badge
+                    className={`${
+                      order?.order_details?.orderType === "limit"
+                        ? "black"
+                        : "bg-violet-600"
+                    } text-white text-xs px-2 py-1`}
+                  >
                     {order.order_details.orderType.toUpperCase()}
                   </Badge>
                 )}
@@ -193,13 +200,21 @@ export default function OrderTable({
               </div>
 
               <div
-                className={`mb-6 p-4 rounded-lg ${profitLoss === "N/A" ? "bg-gray-100 dark:bg-gray-800" : profitLossClass.includes("green") ? "bg-green-50 dark:bg-green-950/20" : "bg-red-50 dark:bg-red-950/20"}`}
+                className={`mb-6 p-4 rounded-lg ${
+                  profitLoss === "N/A"
+                    ? "bg-gray-100 dark:bg-gray-800"
+                    : profitLossClass.includes("green")
+                    ? "bg-green-50 dark:bg-green-950/20"
+                    : "bg-red-50 dark:bg-red-950/20"
+                }`}
               >
                 <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide mb-1">
                   Profit/Loss
                 </p>
                 <p
-                  className={`text-2xl font-bold ${profitLossClass || "text-gray-500"}`}
+                  className={`text-2xl font-bold ${
+                    profitLossClass || "text-gray-500"
+                  }`}
                 >
                   {profitLoss === "N/A"
                     ? profitLoss
@@ -266,8 +281,8 @@ export default function OrderTable({
                   style={{
                     background:
                       order?.order_details?.orderType === "limit"
-                        ? "rgb(139, 92, 246)"
-                        : "black",
+                        ? "black"
+                        : "rgb(139, 92, 246)",
                   }}
                 >
                   {order?.order_details?.orderType?.toUpperCase() || "MARKET"}
@@ -352,7 +367,7 @@ export default function OrderTable({
       <Card className="border-violet-500/20 bg-gradient-to-br from-violet-50/50 to-white dark:from-violet-950/20 dark:to-background">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-violet-400 bg-clip-text text-transparent">
-            Order History
+            All Orders
           </CardTitle>
           <div className="flex items-center space-x-2">
             <Label htmlFor="view-toggle">Table View</Label>

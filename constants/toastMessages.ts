@@ -21,6 +21,8 @@ export const ORDER_NOT_DELETED = "Order not deleted";
 export const ORDER_DELETED_SUCCESSFULLY = "Order deleted successfully";
 export const ORDERS_NOT_FETCHED = "Error fetching orders";
 
+export const BALANCE_UPDATED_SUCCESSFULLY = "Balance updated successfully";
+
 export const SOMETHING_WENT_WRONG = "Something went wrong!";
 
 export function created(module: string) {

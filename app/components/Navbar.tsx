@@ -23,7 +23,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createSupabaseBrowserClient } from "@/utils/supabase/client";
 import toast from "react-hot-toast";
-import { LOGGING_OUT_USER } from "@/constants/toastMessages";
+import {
+  BALANCE_UPDATED_SUCCESSFULLY,
+  LOGGING_OUT_USER,
+} from "@/constants/toastMessages";
 import {
   AUTH_LOGIN,
   DASHBOARD,
@@ -32,29 +35,22 @@ import {
   USER_PROFILE,
 } from "@/constants/navigation";
 import useAuthStore from "@/store/useAuthStore";
+import usePositions from "@/store/usePositions";
 
-interface NavbarProps {
-  balance: number;
-  onAddMoney: (amount: number) => void;
-  currentProfitLoss: number;
-}
-
-export default function Navbar({
-  balance,
-  onAddMoney,
-  currentProfitLoss,
-}: NavbarProps) {
+export default function Navbar() {
   const [showBalanceModal, setShowBalanceModal] = useState(false);
   const [addAmount, setAddAmount] = useState("");
   const supabase = createSupabaseBrowserClient();
-  const { user } = useAuthStore();
-  
+  const { user, setBalance } = useAuthStore();
+  const { pnl } = usePositions();
+
   const handleAddMoney = () => {
     const amount = parseFloat(addAmount);
     if (amount && amount > 0) {
-      onAddMoney(amount);
       setAddAmount("");
       setShowBalanceModal(false);
+      setBalance(amount);
+      toast.success(BALANCE_UPDATED_SUCCESSFULLY);
     }
   };
 
@@ -117,7 +113,7 @@ export default function Navbar({
                   >
                     <Wallet className="h-4 w-4 text-violet-600" />
                     <span className="font-semibold text-violet-700">
-                      ${balance.toFixed(2)}
+                      ${user?.balance?.toFixed(2) || "0.00"}
                     </span>
                   </Button>
                 </DropdownMenuTrigger>
@@ -135,18 +131,18 @@ export default function Navbar({
               {/* Current P/L */}
               <div
                 className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg ${
-                  currentProfitLoss >= 0
+                  pnl >= 0
                     ? "bg-green-50 text-green-700 border border-green-200"
                     : "bg-red-50 text-red-700 border border-red-200"
                 }`}
               >
-                {currentProfitLoss >= 0 ? (
+                {pnl >= 0 ? (
                   <TrendingUp className="h-4 w-4" />
                 ) : (
                   <TrendingDown className="h-4 w-4" />
                 )}
                 <span className="font-semibold text-sm">
-                  ${Math.abs(currentProfitLoss).toFixed(2)}
+                  ${Math.abs(pnl).toFixed(2) || "0.00"}
                 </span>
               </div>
 

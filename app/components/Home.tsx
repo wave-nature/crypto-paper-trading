@@ -37,10 +37,9 @@ const CRYPTOCURRENCIES = [
 ];
 
 export default function Home() {
-  const { user } = useAuthStore();
+  const { user, setBalance } = useAuthStore();
   const { orders, setOrders } = useOrders();
   const { saveOrder, updateOrder, deleteOrder } = useOrdersHook();
-  const [balance, setBalance] = useState(0);
   const [selectedCrypto, setSelectedCrypto] = useState("BTC");
   const [fullChart, setFullChart] = useState(false);
   const [currentPrice, setCurrentPrice] = useState<number | null>(null);
@@ -50,11 +49,7 @@ export default function Home() {
   const [mostProfitableTrade, setMostProfitableTrade] = useState(0);
   const [biggestLossTrade, setBiggestLossTrade] = useState(0);
 
-  useEffect(() => {
-    if (user) {
-      setBalance(user.balance);
-    }
-  }, [user?.balance]);
+  const balance = user?.balance || 0;
 
   const handleTrade = (
     type: "buy" | "sell",
@@ -64,13 +59,13 @@ export default function Home() {
       limitPrice?: number;
       stopLoss?: number;
       target?: number;
-    },
+    }
   ) => {
     if (currentPrice === null) return;
     // if any order is still open return
     if (
       orders.some(
-        (order) => order.status === "open" || order.status === "pending",
+        (order) => order.status === "open" || order.status === "pending"
       )
     ) {
       alert("Please square off all open orders before placing a new order");
@@ -83,7 +78,7 @@ export default function Home() {
         return;
       }
 
-      setBalance((prevBalance) => prevBalance - cost);
+      setBalance(-cost);
 
       const newOrder: Order = {
         type,
@@ -107,7 +102,7 @@ export default function Home() {
         return;
       }
 
-      setBalance((prevBalance) => prevBalance - cost);
+      setBalance(-cost);
 
       const newOrder: Order = {
         type,
@@ -144,7 +139,7 @@ export default function Home() {
 
       setRealtimePL(newPL);
     },
-    [selectedCrypto],
+    [selectedCrypto]
   );
   const updateTradingSummary = () => {
     let profitable = 0;
@@ -178,7 +173,7 @@ export default function Home() {
     const limitOrderIndex = copyOrders.findIndex(
       (order) =>
         order.status === "pending" &&
-        order?.order_details?.orderType === "limit",
+        order?.order_details?.orderType === "limit"
     );
     let limitOrder;
     if (limitOrderIndex !== -1) {
@@ -199,7 +194,7 @@ export default function Home() {
           alert("Insufficient funds!");
           return;
         }
-        setBalance((prevBalance) => prevBalance - cost);
+        setBalance(-cost);
         // update order
         limitOrder.status = "open";
         copyOrders[limitOrderIndex] = limitOrder;
@@ -210,7 +205,7 @@ export default function Home() {
           flooredCurrentPrice - 0.5 === limitOrderPrice - 0.5 ||
           flooredCurrentPrice + 0.5 === limitOrderPrice + 0.5
         ) {
-          setBalance((prevBalance) => prevBalance - cost);
+          setBalance(-cost);
           // update order
           limitOrder.status = "open";
           copyOrders[limitOrderIndex] = limitOrder;
@@ -229,10 +224,6 @@ export default function Home() {
     mostProfitableTrade,
     biggestLossTrade,
   ]);
-
-  const handleAddMoney = (quantity: number) => {
-    setBalance((prevBalance) => prevBalance + quantity);
-  };
 
   const handleSquareOff = (orderId: string) => {
     console.log("Square off order:", orderId);
@@ -258,7 +249,7 @@ export default function Home() {
     // calculate total balance after square off
     const latestClosedOrder = ordersUpdate.sort(
       (a, b) =>
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
     )[0];
     let totalBalance = 0;
     if (
@@ -269,12 +260,12 @@ export default function Home() {
         latestClosedOrder.quantity * latestClosedOrder.price +
         latestClosedOrder.profit;
 
-    setBalance((prevBal) => prevBal + totalBalance);
+    setBalance(totalBalance);
     setOrders(ordersUpdate);
 
     // update order in database
     const order = ordersUpdate.find(
-      (order) => order.id === orderId && order.status === "closed",
+      (order) => order.id === orderId && order.status === "closed"
     );
     if (order) updateOrder(order);
   };
@@ -284,7 +275,7 @@ export default function Home() {
 
     const copyOrders = [...orders];
     const openOrderIndex = copyOrders.findIndex(
-      (order) => order.status === "open",
+      (order) => order.status === "open"
     );
     let order;
     if (openOrderIndex !== -1) {
@@ -356,7 +347,7 @@ export default function Home() {
         </div>
 
         <div className={`grid ${fullChart ? "" : "grid-cols-[3fr_1fr]"} gap-6`}>
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="bg-white rounded-lg shadow-md overflow-hidden h-[90vh]">
             <TradingViewChart symbol={selectedCrypto} />
             <PriceFetcher
               symbol={selectedCrypto}
@@ -374,18 +365,20 @@ export default function Home() {
                 onSquareOff={handleSquareOff}
                 orders={orders}
               />
-              <Portfolio balance={balance} onAddMoney={handleAddMoney} />
             </div>
           )}
         </div>
-        <div className="mt-5">
-          <TradingSummary
-            profitableTradesCount={profitableTradesCount}
-            lossTradesCount={lossTradesCount}
-            totalTradesCount={orders.length}
-            mostProfitableTrade={mostProfitableTrade}
-            biggestLossTrade={biggestLossTrade}
-          />
+        <div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-6">
+            <TradingSummary
+              profitableTradesCount={profitableTradesCount}
+              lossTradesCount={lossTradesCount}
+              totalTradesCount={orders.length}
+              mostProfitableTrade={mostProfitableTrade}
+              biggestLossTrade={biggestLossTrade}
+            />
+            <Portfolio balance={balance} />
+          </div>
           <OrderTable
             orders={orders}
             currentPrice={currentPrice}
