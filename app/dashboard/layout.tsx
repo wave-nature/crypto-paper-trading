@@ -55,7 +55,6 @@ export default function AuthLayout({
         });
 
         // fetch orders
-        console.log("userId", userId);
         await getAllOrders(userId);
       }
     } catch (err) {
@@ -64,7 +63,7 @@ export default function AuthLayout({
   }
   return (
     <>
-      <Navbar balance={1} onAddMoney={() => {}} currentProfitLoss={0} />
+      <Navbar />
       {children}
     </>
   );

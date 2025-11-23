@@ -70,8 +70,6 @@ export function SignupForm() {
         if (error) throw error;
         if (!account) throw new Error("Account not found");
         
-        console.log('account', account)
-
         setUser({
           id: data.user.id,
           name: data.user.user_metadata.name,

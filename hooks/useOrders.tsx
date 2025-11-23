@@ -41,8 +41,6 @@ const useOrdersHook = () => {
       .update(order)
       .eq("id", order.id);
 
-    console.log("order", order);
-
     if (error) {
       console.error("Error updating order:", error);
       toast.error(ORDER_NOT_UPDATED);

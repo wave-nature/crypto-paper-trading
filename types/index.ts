@@ -15,4 +15,5 @@ export interface Order {
   closed_price?: number;
   profit?: number;
   user_id?: string;
+  updated_at?: string;
 }

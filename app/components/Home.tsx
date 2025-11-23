@@ -13,16 +13,9 @@ import TradingInterfaceHorizontal from "./TradingInterfaceHorizontal";
 import useAuthStore from "@/store/useAuthStore";
 import useOrders from "@/store/useOrders";
 import toast from "react-hot-toast";
-import {
-  ORDER_DELETED_SUCCESSFULLY,
-  ORDER_NOT_DELETED,
-  ORDER_NOT_PLACED,
-  ORDER_NOT_UPDATED,
-  ORDER_PLACED_SUCCESSFULLY,
-  ORDER_UPDATED_SUCCESSFULLY,
-  ORDERS_NOT_FETCHED,
-} from "@/constants/toastMessages";
 import useOrdersHook from "@/hooks/useOrders";
+import usePriceFetcher from "@/hooks/usePriceFetcher";
+import { useCurrentPrice, useOverallPnl } from "@/store/usePositions";
 
 const CRYPTOCURRENCIES = [
   "BTC",
@@ -40,108 +33,150 @@ export default function Home() {
   const { user, setBalance } = useAuthStore();
   const { orders, setOrders } = useOrders();
   const { saveOrder, updateOrder, deleteOrder } = useOrdersHook();
+
+  // Use selective subscriptions to prevent unnecessary re-renders
+  const currentPrice = useCurrentPrice();
+
   const [selectedCrypto, setSelectedCrypto] = useState("BTC");
   const [fullChart, setFullChart] = useState(false);
-  const [currentPrice, setCurrentPrice] = useState<number | null>(null);
-  const [realtimePL, setRealtimePL] = useState(0);
   const [profitableTradesCount, setProfitableTradesCount] = useState(0);
   const [lossTradesCount, setLossTradesCount] = useState(0);
   const [mostProfitableTrade, setMostProfitableTrade] = useState(0);
   const [biggestLossTrade, setBiggestLossTrade] = useState(0);
 
+  // Price fetcher runs in the background
+  usePriceFetcher({ symbol: selectedCrypto, orders });
+
   const balance = user?.balance || 0;
 
-  const handleTrade = (
-    type: "buy" | "sell",
-    quantity: number,
-    orderDetails: {
-      orderType: "market" | "limit";
-      limitPrice?: number;
-      stopLoss?: number;
-      target?: number;
-    }
-  ) => {
-    if (currentPrice === null) return;
-    // if any order is still open return
-    if (
-      orders.some(
-        (order) => order.status === "open" || order.status === "pending"
-      )
-    ) {
-      alert("Please square off all open orders before placing a new order");
-      return;
-    }
-    if (orderDetails.orderType === "limit") {
-      const cost = quantity * orderDetails?.limitPrice!;
-      if (cost > balance) {
-        alert("Insufficient funds!");
+  const handleTrade = useCallback(
+    (
+      type: "buy" | "sell",
+      quantity: number,
+      orderDetails: {
+        orderType: "market" | "limit";
+        limitPrice?: number;
+        stopLoss?: number;
+        target?: number;
+      }
+    ) => {
+      if (currentPrice === null) return;
+      // if any order is still open return
+      if (
+        orders.some(
+          (order) => order.status === "open" || order.status === "pending"
+        )
+      ) {
+        alert("Please square off all open orders before placing a new order");
         return;
       }
-
-      setBalance(-cost);
-
-      const newOrder: Order = {
-        type,
-        symbol: selectedCrypto,
-        quantity,
-        price: orderDetails.limitPrice!,
-        timestamp: new Date().toISOString(),
-        status: "pending",
-        order_details: orderDetails,
-        user_id: user?.id,
-      };
-
-      const newOrders = [newOrder, ...orders];
-      setOrders(newOrders);
-      saveOrder(newOrder);
-    } else {
-      const cost = quantity * currentPrice;
-
-      if (cost > balance) {
-        alert("Insufficient funds!");
-        return;
-      }
-
-      setBalance(-cost);
-
-      const newOrder: Order = {
-        type,
-        symbol: selectedCrypto,
-        quantity,
-        price: currentPrice,
-        timestamp: new Date().toISOString(),
-        status: "open",
-        order_details: orderDetails,
-        user_id: user?.id,
-      };
-      const newOrders = [newOrder, ...orders];
-      setOrders(newOrders);
-      saveOrder(newOrder);
-    }
-  };
-
-  const handlePriceUpdate = useCallback(
-    (price: number) => {
-      if (price) {
-        setCurrentPrice(price);
-      }
-
-      // Calculate real-time P/L
-      const newPL = orders.reduce((total, order) => {
-        if (order.status === "open" && order.symbol === selectedCrypto) {
-          const diff = price - order.price;
-          const orderPL =
-            diff * order.quantity * (order.type === "buy" ? 1 : -1);
-          return total + orderPL;
+      if (orderDetails.orderType === "limit") {
+        const cost = quantity * orderDetails?.limitPrice!;
+        if (cost > balance) {
+          alert("Insufficient funds!");
+          return;
         }
-        return total + (order.profit || 0);
-      }, 0);
 
-      setRealtimePL(newPL);
+        setBalance(-cost);
+
+        const newOrder: Order = {
+          type,
+          symbol: selectedCrypto,
+          quantity,
+          price: orderDetails.limitPrice!,
+          timestamp: new Date().toISOString(),
+          status: "pending",
+          order_details: orderDetails,
+          user_id: user?.id,
+        };
+
+        const newOrders = [newOrder, ...orders];
+        setOrders(newOrders);
+        saveOrder(newOrder);
+      } else {
+        const cost = quantity * currentPrice;
+
+        if (cost > balance) {
+          alert("Insufficient funds!");
+          return;
+        }
+
+        setBalance(-cost);
+
+        const newOrder: Order = {
+          type,
+          symbol: selectedCrypto,
+          quantity,
+          price: currentPrice,
+          timestamp: new Date().toISOString(),
+          status: "open",
+          order_details: orderDetails,
+          user_id: user?.id,
+        };
+        const newOrders = [newOrder, ...orders];
+        setOrders(newOrders);
+        saveOrder(newOrder);
+      }
     },
-    [selectedCrypto]
+    [
+      currentPrice,
+      orders,
+      balance,
+      selectedCrypto,
+      user?.id,
+      setBalance,
+      setOrders,
+      saveOrder,
+    ]
   );
-  const updateTradingSummary = () => {
+
+  const handleUpdateTrade = useCallback(
+    (order: Order, quantity: number, stopLoss?: number, target?: number) => {
+      if (currentPrice === null) return;
+      const prevCurrentPriceCost = order.quantity * order.price;
+      const currentCost = quantity * currentPrice;
+      const previousQuantity = order.quantity;
+      const avgPrice =
+        (prevCurrentPriceCost + currentCost) / (previousQuantity + quantity);
+
+      console.log("avg", {
+        prevCurrentPriceCost,
+        currentCost,
+        previousQuantity,
+        avgPrice,
+        quantity,
+      });
+
+      if (currentCost > balance) {
+        alert("Insufficient funds!");
+        return;
+      }
+
+      // setBalance(-currentCost);
+      const updatedOrderDetails = {
+        ...order,
+        quantity: order.quantity + quantity,
+        price: avgPrice,
+        timestamp: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        // order_details: orderDetails,
+      };
+      const findOrderIndex = orders.findIndex((ord) => ord.id === order.id);
+      if (findOrderIndex === -1) return toast.error("Order not found!");
+      const prevOrders = [...orders];
+      const findOrder = prevOrders[findOrderIndex];
+      findOrder.quantity = order.quantity + quantity;
+      findOrder.price = avgPrice;
+      findOrder.timestamp = new Date().toISOString();
+      prevOrders[findOrderIndex] = findOrder;
+
+      setOrders(prevOrders);
+      updateOrder(updatedOrderDetails);
+    },
+    [currentPrice, orders, balance, setOrders]
+  );
+
+  const updateTradingSummary = useCallback(() => {
     let profitable = 0;
     let loss = 0;
     let maxProfit = 0;
@@ -163,7 +198,7 @@ export default function Home() {
     setLossTradesCount(loss);
     setMostProfitableTrade(maxProfit);
     setBiggestLossTrade(Math.abs(maxLoss));
-  };
+  }, [orders]);
 
   // handle limit order execution
   useEffect(() => {
@@ -213,62 +248,58 @@ export default function Home() {
         }
       }
     }
-  }, [currentPrice]);
+  }, [currentPrice, orders, balance, setBalance, setOrders]);
 
   useEffect(() => {
     updateTradingSummary();
-  }, [
-    orders,
-    profitableTradesCount,
-    lossTradesCount,
-    mostProfitableTrade,
-    biggestLossTrade,
-  ]);
+  }, [orders, updateTradingSummary]);
 
-  const handleSquareOff = (orderId: string) => {
-    console.log("Square off order:", orderId);
-    if (currentPrice === null) return;
-    const prevOrders = [...orders];
-    const ordersUpdate: Order[] = prevOrders.map((order) => {
-      if (order.id === orderId && order.status === "open") {
-        const profit =
-          order.type === "buy"
-            ? (currentPrice - order.price) * order.quantity
-            : (order.price - currentPrice) * order.quantity;
+  const handleSquareOff = useCallback(
+    (orderId: string) => {
+      if (currentPrice === null) return;
+      const prevOrders = [...orders];
+      const ordersUpdate: Order[] = prevOrders.map((order) => {
+        if (order.id === orderId && order.status === "open") {
+          const profit =
+            order.type === "buy"
+              ? (currentPrice - order.price) * order.quantity
+              : (order.price - currentPrice) * order.quantity;
 
-        return {
-          ...order,
-          status: "closed",
-          closed_price: currentPrice,
-          profit,
-        };
-      }
+          return {
+            ...order,
+            status: "closed",
+            closed_price: currentPrice,
+            profit,
+          };
+        }
 
-      return order;
-    });
-    // calculate total balance after square off
-    const latestClosedOrder = ordersUpdate.sort(
-      (a, b) =>
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-    )[0];
-    let totalBalance = 0;
-    if (
-      latestClosedOrder.status === "closed" &&
-      latestClosedOrder.profit !== undefined
-    )
-      totalBalance =
-        latestClosedOrder.quantity * latestClosedOrder.price +
-        latestClosedOrder.profit;
+        return order;
+      });
+      // calculate total balance after square off
+      const latestClosedOrder = ordersUpdate.sort(
+        (a, b) =>
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      )[0];
+      let totalBalance = 0;
+      if (
+        latestClosedOrder.status === "closed" &&
+        latestClosedOrder.profit !== undefined
+      )
+        totalBalance =
+          latestClosedOrder.quantity * latestClosedOrder.price +
+          latestClosedOrder.profit;
 
-    setBalance(totalBalance);
-    setOrders(ordersUpdate);
+      setBalance(totalBalance);
+      setOrders(ordersUpdate);
 
-    // update order in database
-    const order = ordersUpdate.find(
-      (order) => order.id === orderId && order.status === "closed"
-    );
-    if (order) updateOrder(order);
-  };
+      // update order in database
+      const order = ordersUpdate.find(
+        (order) => order.id === orderId && order.status === "closed"
+      );
+      if (order) updateOrder(order);
+    },
+    [currentPrice, orders, setBalance, setOrders, updateOrder]
+  );
 
   useEffect(() => {
     if (!currentPrice) return;
@@ -309,13 +340,16 @@ export default function Home() {
         handleSquareOff(order.id);
       }
     }
-  }, [currentPrice]);
+  }, [currentPrice, orders, handleSquareOff]);
 
-  const handleDeleteOrder = (orderId: string) => {
-    const updatedOrders = orders.filter((order) => order.id !== orderId);
-    setOrders(updatedOrders);
-    deleteOrder(orderId);
-  };
+  const handleDeleteOrder = useCallback(
+    (orderId: string) => {
+      const updatedOrders = orders.filter((order) => order.id !== orderId);
+      setOrders(updatedOrders);
+      deleteOrder(orderId);
+    },
+    [orders, setOrders, deleteOrder]
+  );
 
   return (
     <>
@@ -349,10 +383,6 @@ export default function Home() {
         <div className={`grid ${fullChart ? "" : "grid-cols-[3fr_1fr]"} gap-6`}>
           <div className="bg-white rounded-lg shadow-md overflow-hidden h-[90vh]">
             <TradingViewChart symbol={selectedCrypto} />
-            <PriceFetcher
-              symbol={selectedCrypto}
-              onPriceUpdate={handlePriceUpdate}
-            />
           </div>
           {fullChart ? null : (
             <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
@@ -385,7 +415,7 @@ export default function Home() {
             selectedCrypto={selectedCrypto}
             onSquareOff={handleSquareOff}
             onDeleteOrder={handleDeleteOrder}
-            overallProfitLoss={realtimePL}
+            onUpdateTrade={handleUpdateTrade}
           />
         </div>
       </div>
