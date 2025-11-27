@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import ToastContainer from "./components/ToastContainer";
 export const metadata: Metadata = {
-  title: "Paper Trading",
+  title: "Paprweight",
   description: "A simple paper trading app",
 };
 

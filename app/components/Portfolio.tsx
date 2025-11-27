@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import useAuthStore from "@/store/useAuthStore";
+import { readableCurrency } from "@/utils/helpers";
 
 interface PortfolioProps {
   balance: number;
@@ -36,7 +37,7 @@ export default function Portfolio({ balance }: PortfolioProps) {
           <div>
             <h3 className="font-semibold">Cash Balance</h3>
             <p className="text-2xl font-bold text-violet-600">
-              ${balance.toFixed(2)}
+              {readableCurrency(balance || 0)}
             </p>
           </div>
           <div>

@@ -36,6 +36,8 @@ import {
 } from "@/constants/navigation";
 import useAuthStore from "@/store/useAuthStore";
 import usePositions from "@/store/usePositions";
+import { readableCurrency } from "@/utils/helpers";
+import { read } from "fs";
 
 export default function Navbar() {
   const [showBalanceModal, setShowBalanceModal] = useState(false);
@@ -113,7 +115,7 @@ export default function Navbar() {
                   >
                     <Wallet className="h-4 w-4 text-violet-600" />
                     <span className="font-semibold text-violet-700">
-                      ${user?.balance?.toFixed(2) || "0.00"}
+                      {readableCurrency(user?.balance || 0)}
                     </span>
                   </Button>
                 </DropdownMenuTrigger>
@@ -142,7 +144,7 @@ export default function Navbar() {
                   <TrendingDown className="h-4 w-4" />
                 )}
                 <span className="font-semibold text-sm">
-                  ${Math.abs(pnl).toFixed(2) || "0.00"}
+                  {readableCurrency(pnl) || "0.00"}
                 </span>
               </div>
 
@@ -179,7 +181,7 @@ export default function Navbar() {
                 variant="outline"
                 className="flex items-center space-x-2 border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400 transition-colors"
               >
-                <LogOut className="h-3 w-3" />
+                <LogOut className="h-4 w-4" />
                 <span className="font-normal">Logout</span>
               </Button>
             </div>

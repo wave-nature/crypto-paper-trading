@@ -77,8 +77,6 @@ const useOrdersHook = () => {
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
 
-    console.log("data", data);
-
     if (error) {
       console.error("Error fetching orders:", error);
       toast.error(ORDERS_NOT_FETCHED);

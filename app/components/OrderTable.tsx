@@ -18,6 +18,7 @@ import { X, Trash2, AlertTriangle, Edit2Icon } from "lucide-react";
 import { Order } from "@/types";
 import useStore, { useOverallPnl } from "@/store/usePositions";
 import Modal from "./ui/Modal";
+import { readableCurrency } from "@/utils/helpers";
 
 interface OrderTableProps {
   orders: Order[];
@@ -29,7 +30,7 @@ interface OrderTableProps {
     order: Order,
     quantity: number,
     stopLoss?: number,
-    target?: number
+    target?: number,
   ) => void;
 }
 
@@ -123,7 +124,7 @@ const renderCardView = ({
                   Entry Price
                 </p>
                 <p className="text-base font-semibold text-gray-900 dark:text-white">
-                  ${order.price?.toFixed(2)}
+                  {readableCurrency(order.price || 0)}
                 </p>
               </div>
               <div className="space-y-1">
@@ -132,7 +133,7 @@ const renderCardView = ({
                 </p>
                 <p className="text-base font-semibold text-gray-900 dark:text-white">
                   {order.closed_price
-                    ? `$${order.closed_price?.toFixed(2)}`
+                    ? readableCurrency(order.closed_price || 0)
                     : "N/A"}
                 </p>
               </div>
@@ -142,7 +143,7 @@ const renderCardView = ({
                     Target
                   </p>
                   <p className="text-base font-semibold text-green-600 dark:text-green-400">
-                    ${order.order_details.target.toFixed(2)}
+                    {readableCurrency(order.order_details.target || 0)}
                   </p>
                 </div>
               )}
@@ -152,7 +153,7 @@ const renderCardView = ({
                     Stop Loss
                   </p>
                   <p className="text-base font-semibold text-red-600 dark:text-red-400">
-                    ${order.order_details?.stopLoss?.toFixed(2)}
+                    {readableCurrency(order.order_details?.stopLoss || 0)}
                   </p>
                 </div>
               )}
@@ -163,8 +164,8 @@ const renderCardView = ({
                 profitLoss === "N/A"
                   ? "bg-gray-100 dark:bg-gray-800"
                   : profitLossClass.includes("green")
-                  ? "bg-green-50 dark:bg-green-950/20"
-                  : "bg-red-50 dark:bg-red-950/20"
+                    ? "bg-green-50 dark:bg-green-950/20"
+                    : "bg-red-50 dark:bg-red-950/20"
               }`}
             >
               <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide mb-1">
@@ -177,7 +178,12 @@ const renderCardView = ({
               >
                 {profitLoss === "N/A"
                   ? profitLoss
-                  : `${profitLoss.startsWith("-") ? "" : "+"}$${profitLoss}`}
+                  : `${
+                      profitLoss.startsWith("-")
+                        ? "-"
+                        : "+" +
+                          readableCurrency(Math.abs(parseFloat(profitLoss)))
+                    }`}
               </p>
             </div>
 
@@ -281,12 +287,12 @@ const renderTableView = ({
             </TableCell>
             <TableCell>{order.symbol}</TableCell>
             <TableCell>{order.quantity?.toFixed(8)}</TableCell>
-            <TableCell>${order.price?.toFixed(2)}</TableCell>
+            <TableCell>{readableCurrency(order.price || 0)}</TableCell>
             <TableCell>
-              ${order?.order_details?.target?.toFixed(2) || "0.00"}
+              {readableCurrency(order.order_details?.target || 0)}
             </TableCell>
             <TableCell>
-              ${order?.order_details?.stopLoss?.toFixed(2) || "0.00"}
+              {readableCurrency(order.order_details?.stopLoss || 0)}
             </TableCell>
             <TableCell>
               <Badge
@@ -303,8 +309,8 @@ const renderTableView = ({
                 ? profitLoss
                 : `${
                     profitLoss.startsWith("-")
-                      ? "-$" + profitLoss.replace("-", "")
-                      : "+$" + profitLoss
+                      ? "-"
+                      : "+" + readableCurrency(parseFloat(profitLoss))
                   }`}
             </TableCell>
             <TableCell>
@@ -378,7 +384,7 @@ export default function OrderTable({
 
   const paginatedOrders = orders.slice(
     (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+    currentPage * itemsPerPage,
   );
 
   const calculateProfitLoss = (order: Order) => {
@@ -478,8 +484,8 @@ export default function OrderTable({
               overallPnl >= 0 ? "text-green-500" : "text-red-500"
             }`}
           >
-            Overall P/L: {overallPnl >= 0 ? "+" : "-"}$
-            {Math.abs(overallPnl).toFixed(2)}
+            Overall P/L: {overallPnl >= 0 ? "+" : "-"}
+            {readableCurrency(overallPnl)}
           </div>
 
           {isCardView

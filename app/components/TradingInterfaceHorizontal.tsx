@@ -7,6 +7,7 @@ import useStore from "@/store/usePositions";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { Order } from "@/types";
+import { readableCurrency } from "@/utils/helpers";
 
 interface TradingInterfaceProps {
   onTrade: (
@@ -17,7 +18,7 @@ interface TradingInterfaceProps {
       limitPrice?: number;
       stopLoss?: number;
       target?: number;
-    }
+    },
   ) => void;
   currentPrice: number | null;
   selectedCrypto: string;
@@ -83,8 +84,8 @@ export default function TradingInterfaceHorizontal({
 
   return (
     <div className="border border-violet-500/20 bg-gradient-to-br from-violet-50/50 to-white dark:from-violet-950/20 dark:to-background py-0 m-0 rounded-lg">
-      <div className="px-2 w-full">
-        <div className="space-y-2 flex items-center justify-between w-full">
+      <div className="px-[3px] w-full">
+        <div className="my-[3px] flex items-center justify-between w-full">
           <div>
             <select
               value={selectedCrypto}
@@ -126,8 +127,8 @@ export default function TradingInterfaceHorizontal({
               type="number"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="w-full p-1 border border-violet-200 rounded focus:outline-none focus:ring-2 focus:ring-violet-500 h-8"
-              placeholder="Amount ($)"
+              className="w-full p-1 border border-violet-200 rounded focus:outline-none focus:ring-2 focus:ring-violet-500 h-8 placeholder:text-sm"
+              placeholder="Quantity"
               step="0.0001"
               min="0"
             />
@@ -139,8 +140,8 @@ export default function TradingInterfaceHorizontal({
                   type="number"
                   value={limitPrice}
                   onChange={(e) => setLimitPrice(e.target.value)}
-                  className="w-full p-1 border border-violet-200 rounded focus:outline-none focus:ring-2 focus:ring-violet-500 h-8"
-                  placeholder="Set a price for your limit order"
+                  className="w-full p-1 border border-violet-200 rounded focus:outline-none focus:ring-2 focus:ring-violet-500 h-8 placeholder:text-sm"
+                  placeholder="Limit Price ($)"
                   step="0.01"
                   min="0"
                 />
@@ -151,7 +152,7 @@ export default function TradingInterfaceHorizontal({
                 type="number"
                 value={stopLoss}
                 onChange={(e) => setStopLoss(e.target.value)}
-                className="w-full p-1 border border-violet-200 rounded focus:outline-none focus:ring-2 focus:ring-violet-500 h-8"
+                className="w-full p-1 border border-violet-200 rounded focus:outline-none focus:ring-2 focus:ring-violet-500 h-8 placeholder:text-sm"
                 placeholder="Stop Loss (optional)"
                 step="0.01"
                 min="0"
@@ -162,7 +163,7 @@ export default function TradingInterfaceHorizontal({
                 type="number"
                 value={target}
                 onChange={(e) => setTarget(e.target.value)}
-                className="w-full p-1 border border-violet-200 rounded focus:outline-none focus:ring-2 focus:ring-violet-500 h-8"
+                className="w-full p-1 border border-violet-200 rounded focus:outline-none focus:ring-2 focus:ring-violet-500 h-8 placeholder:text-sm"
                 placeholder="Target (optional)"
                 step="0.01"
                 min="0"
@@ -170,16 +171,14 @@ export default function TradingInterfaceHorizontal({
             </div>
           </>
           <div>
-            <p>${currentPrice ? currentPrice.toFixed(2) : "0.00"}</p>
+            <p>{currentPrice ? readableCurrency(currentPrice) : "0.00"}</p>
           </div>
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 mr-2">
               <span>P/L:</span>
-              <span className={pnl > 0 ? "text-green-500" : "text-red-500"}>
-                {`${
-                  profitLoss.startsWith("-") ? "-" : "+"
-                }$${profitLoss.replace("-", "")}`}
+              <span className={pnl >= 0 ? "text-green-500" : "text-red-500"}>
+                {`${profitLoss.startsWith("-") ? "" : "+"}${readableCurrency(parseFloat(profitLoss))}`}
               </span>
             </div>
 
@@ -188,9 +187,9 @@ export default function TradingInterfaceHorizontal({
                 onClick={() => onSquareOff(order?.id || "")}
                 size="icon"
                 variant="outline"
-                className="border-violet-500 text-violet-500 hover:bg-violet-50 p-1"
+                className="border-red-500 text-red-500 hover:bg-violet-50 p-0 h-8 w-8"
               >
-                <X />
+                <X  />
               </Button>
             )}
           </div>

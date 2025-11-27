@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { readableCurrency } from "@/utils/helpers"
 
 interface TradingSummaryProps {
   profitableTradesCount: number
@@ -43,11 +44,11 @@ export default function TradingSummary({
           </div>
           <div>
             <h3 className="text-sm font-medium text-muted-foreground">Most Profitable Trade</h3>
-            <p className="text-2xl font-bold text-green-500">${mostProfitableTrade.toFixed(2)}</p>
+            <p className="text-2xl font-bold text-green-500">{readableCurrency(mostProfitableTrade)}</p>
           </div>
           <div>
             <h3 className="text-sm font-medium text-muted-foreground">Biggest Loss Trade</h3>
-            <p className="text-2xl font-bold text-red-500">${biggestLossTrade.toFixed(2)}</p>
+            <p className="text-2xl font-bold text-red-500">{readableCurrency(biggestLossTrade)}</p>
           </div>
         </div>
       </CardContent>

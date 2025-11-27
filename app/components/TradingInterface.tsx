@@ -7,6 +7,7 @@ import useStore from "@/store/usePositions";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { Order } from "@/types";
+import { readableCurrency } from "@/utils/helpers";
 
 interface TradingInterfaceProps {
   onTrade: (
@@ -17,7 +18,7 @@ interface TradingInterfaceProps {
       limitPrice?: number;
       stopLoss?: number;
       target?: number;
-    }
+    },
   ) => void;
   currentPrice: number | null;
   selectedCrypto: string;
@@ -128,7 +129,7 @@ export default function TradingInterface({
             </ToggleGroupItem>
           </ToggleGroup>
           <div>
-            <label className="block mb-1">Amount ({selectedCrypto}):</label>
+            <label className="block mb-1">Quantity ({selectedCrypto}):</label>
             <input
               type="number"
               value={amount}
@@ -181,16 +182,16 @@ export default function TradingInterface({
           </>
           <div>
             <p className="mb-2">
-              Current Price: $
-              {currentPrice ? currentPrice.toFixed(2) : "Loading..."}
+              Current Price:{" "}
+              {currentPrice ? readableCurrency(currentPrice) : "Loading..."}
             </p>
           </div>
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <span>P/L:</span>
-              <span className={pnl > 0 ? "text-green-500" : "text-red-500"}>
-                {`${profitLoss.startsWith("-") ? "" : "+"}$${profitLoss}`}
+              <span className={pnl >= 0 ? "text-green-500" : "text-red-500"}>
+                {`${profitLoss.startsWith("-") ? "" : "+"}${readableCurrency(parseFloat(profitLoss))}`}
               </span>
             </div>
 

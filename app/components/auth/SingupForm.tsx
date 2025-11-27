@@ -60,7 +60,7 @@ export function SignupForm() {
       });
 
       if (!error && data.user) {
-        const { error, data: account } = await supabase
+        const { error } = await supabase
           .from("accounts")
           .insert({
             username,
@@ -68,8 +68,14 @@ export function SignupForm() {
           })
           .single();
         if (error) throw error;
+        const { data: account } = await supabase
+          .from("accounts")
+          .select("*")
+          .eq("user_id", data.user.id)
+          .single();
+
         if (!account) throw new Error("Account not found");
-        
+
         setUser({
           id: data.user.id,
           name: data.user.user_metadata.name,
