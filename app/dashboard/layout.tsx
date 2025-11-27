@@ -7,6 +7,7 @@ import useOrdersHook from "@/hooks/useOrders";
 import { AUTH_LOGIN } from "@/constants/navigation";
 import { createSupabaseBrowserClient } from "@/utils/supabase/client";
 import Navbar from "../components/Navbar";
+import useAccountHook from "@/hooks/useAccount";
 
 export default function AuthLayout({
   children,
@@ -15,6 +16,7 @@ export default function AuthLayout({
 }) {
   const { user, setUser } = useAuthStore();
   const { getAllOrders } = useOrdersHook();
+  const { getAccount } = useAccountHook();
   const supabase = createSupabaseBrowserClient();
 
   useEffect(() => {
@@ -30,19 +32,14 @@ export default function AuthLayout({
   async function getUser() {
     try {
       const { data, error } = await supabase.auth.getUser();
-
+      
       if (error || !data) {
         toast.error(error?.message || "User not found");
         await new Promise((resolve) => setTimeout(resolve, 1000));
         window.location.href = AUTH_LOGIN;
       } else {
         const userId = data.user.id;
-        const { data: account, error } = await supabase
-          .from("accounts")
-          .select("*")
-          .eq("user_id", userId)
-          .single();
-
+        const { data: account, error } = await getAccount(userId);
         if (error) throw error;
         if (!account) throw new Error("Account not found");
         setUser({

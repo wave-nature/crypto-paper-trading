@@ -14,7 +14,16 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { X, Trash2, AlertTriangle, Edit2Icon } from "lucide-react";
+import {
+  X,
+  Trash2,
+  AlertTriangle,
+  Edit2Icon,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+} from "lucide-react";
 import { Order } from "@/types";
 import useStore, { useOverallPnl } from "@/store/usePositions";
 import Modal from "./ui/Modal";
@@ -32,6 +41,13 @@ interface OrderTableProps {
     stopLoss?: number,
     target?: number,
   ) => void;
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  onPageChange: (page: number) => void;
 }
 
 const tabs = [
@@ -43,7 +59,7 @@ const tabs = [
 ];
 
 interface OrderViewProps {
-  paginatedOrders: Order[];
+  orders: Order[];
   calculateProfitLoss: (order: Order) => string;
   getProfitLossClass: (value: string) => string;
   onSquareOff: (orderId: string) => void;
@@ -52,7 +68,7 @@ interface OrderViewProps {
 }
 
 const renderCardView = ({
-  paginatedOrders,
+  orders,
   calculateProfitLoss,
   getProfitLossClass,
   onSquareOff,
@@ -60,7 +76,7 @@ const renderCardView = ({
   handleEditClick,
 }: OrderViewProps) => (
   <div className="space-y-4">
-    {paginatedOrders.map((order) => {
+    {orders.map((order) => {
       const profitLoss = calculateProfitLoss(order);
       const profitLossClass = getProfitLossClass(profitLoss);
 
@@ -230,7 +246,7 @@ const renderCardView = ({
 );
 
 const renderTableView = ({
-  paginatedOrders,
+  orders,
   calculateProfitLoss,
   getProfitLossClass,
   onSquareOff,
@@ -254,9 +270,12 @@ const renderTableView = ({
       </TableRow>
     </TableHeader>
     <TableBody>
-      {paginatedOrders.map((order: Order) => {
+      {orders.map((order: Order) => {
         const profitLoss = calculateProfitLoss(order);
         const profitLossClass = getProfitLossClass(profitLoss);
+        const negative = profitLoss.includes("-");
+        const pnl = Math.abs(parseFloat(profitLoss));
+        const readablePnl = readableCurrency(pnl);
         const orderId = order.id || "";
 
         return (
@@ -304,15 +323,7 @@ const renderTableView = ({
             <TableCell>
               {order.closed_price ? `$${order.closed_price.toFixed(2)}` : "N/A"}
             </TableCell>
-            <TableCell className={profitLossClass}>
-              {profitLoss === "N/A"
-                ? profitLoss
-                : `${
-                    profitLoss.startsWith("-")
-                      ? "-"
-                      : "+" + readableCurrency(parseFloat(profitLoss))
-                  }`}
-            </TableCell>
+            <TableCell className={profitLossClass}>{readablePnl}</TableCell>
             <TableCell>
               <div className="flex space-x-2">
                 {order.status === "open" && (
@@ -366,6 +377,8 @@ export default function OrderTable({
   onSquareOff,
   onDeleteOrder,
   onUpdateTrade,
+  pagination,
+  onPageChange,
 }: OrderTableProps) {
   const [isCardView, setIsCardView] = useState(false);
   const [deleteOrderId, setDeleteOrderId] = useState<string | null>(null);
@@ -490,7 +503,7 @@ export default function OrderTable({
 
           {isCardView
             ? renderCardView({
-                paginatedOrders,
+                orders,
                 calculateProfitLoss,
                 getProfitLossClass,
                 onSquareOff,
@@ -498,7 +511,7 @@ export default function OrderTable({
                 handleEditClick,
               })
             : renderTableView({
-                paginatedOrders,
+                orders,
                 calculateProfitLoss,
                 getProfitLossClass,
                 onSquareOff,
@@ -506,41 +519,172 @@ export default function OrderTable({
                 handleEditClick,
               })}
 
-          {/* Pagination controls */}
-          {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-2 mt-6">
-              <Button
-                onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                disabled={currentPage === 1}
-                variant="outline"
-                className="border-violet-500 text-violet-500 hover:bg-violet-50"
-              >
-                Prev
-              </Button>
-              {Array.from({ length: totalPages }).map((_, i) => (
+          {/* Enhanced Pagination Controls */}
+          {pagination.totalPages > 1 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 px-2">
+              {/* Pagination Info */}
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                Showing{" "}
+                <span className="font-medium text-violet-600 dark:text-violet-400">
+                  {(pagination.page - 1) * pagination.limit + 1}
+                </span>{" "}
+                to{" "}
+                <span className="font-medium text-violet-600 dark:text-violet-400">
+                  {Math.min(
+                    pagination.page * pagination.limit,
+                    pagination.total,
+                  )}
+                </span>{" "}
+                of{" "}
+                <span className="font-medium text-violet-600 dark:text-violet-400">
+                  {pagination.total}
+                </span>{" "}
+                orders
+              </div>
+
+              {/* Pagination Buttons */}
+              <div className="flex items-center gap-2">
+                {/* First Page */}
                 <Button
-                  key={i}
-                  onClick={() => setCurrentPage(i + 1)}
-                  variant={currentPage === i + 1 ? "default" : "outline"}
-                  className={
-                    currentPage === i + 1
-                      ? "bg-violet-500 hover:bg-violet-600"
-                      : "border-violet-500 text-violet-500 hover:bg-violet-50"
-                  }
+                  onClick={() => onPageChange(1)}
+                  disabled={pagination.page === 1}
+                  variant="outline"
+                  size="icon"
+                  className="border-violet-300 text-violet-600 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-400 dark:hover:bg-violet-950/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="First page"
                 >
-                  {i + 1}
+                  <ChevronsLeft className="h-4 w-4" />
                 </Button>
-              ))}
-              <Button
-                onClick={() =>
-                  setCurrentPage((p) => Math.min(p + 1, totalPages))
-                }
-                disabled={currentPage === totalPages}
-                variant="outline"
-                className="border-violet-500 text-violet-500 hover:bg-violet-50"
-              >
-                Next
-              </Button>
+
+                {/* Previous Page */}
+                <Button
+                  onClick={() => onPageChange(pagination.page - 1)}
+                  disabled={pagination.page === 1}
+                  variant="outline"
+                  className="border-violet-300 text-violet-600 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-400 dark:hover:bg-violet-950/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Previous page"
+                >
+                  <ChevronLeft className="h-4 w-4 mr-1" />
+                  <span className="hidden sm:inline">Prev</span>
+                </Button>
+
+                {/* Page Numbers */}
+                <div className="flex items-center gap-1">
+                  {(() => {
+                    const pageNumbers = [];
+                    const maxVisible = 5;
+                    let startPage = Math.max(
+                      1,
+                      pagination.page - Math.floor(maxVisible / 2),
+                    );
+                    let endPage = Math.min(
+                      pagination.totalPages,
+                      startPage + maxVisible - 1,
+                    );
+
+                    if (endPage - startPage < maxVisible - 1) {
+                      startPage = Math.max(1, endPage - maxVisible + 1);
+                    }
+
+                    // First page + ellipsis
+                    if (startPage > 1) {
+                      pageNumbers.push(
+                        <Button
+                          key={1}
+                          onClick={() => onPageChange(1)}
+                          variant="outline"
+                          size="icon"
+                          className="hidden sm:inline-flex border-violet-300 text-violet-600 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-400 dark:hover:bg-violet-950/30"
+                        >
+                          1
+                        </Button>,
+                      );
+                      if (startPage > 2) {
+                        pageNumbers.push(
+                          <span
+                            key="ellipsis-1"
+                            className="hidden sm:inline px-2 text-gray-400"
+                          >
+                            ...
+                          </span>,
+                        );
+                      }
+                    }
+
+                    // Visible page numbers
+                    for (let i = startPage; i <= endPage; i++) {
+                      pageNumbers.push(
+                        <Button
+                          key={i}
+                          onClick={() => onPageChange(i)}
+                          variant={
+                            pagination.page === i ? "default" : "outline"
+                          }
+                          size="icon"
+                          className={
+                            pagination.page === i
+                              ? "bg-violet-500 hover:bg-violet-600 text-white border-violet-500"
+                              : "border-violet-300 text-violet-600 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-400 dark:hover:bg-violet-950/30"
+                          }
+                        >
+                          {i}
+                        </Button>,
+                      );
+                    }
+
+                    // Ellipsis + last page
+                    if (endPage < pagination.totalPages) {
+                      if (endPage < pagination.totalPages - 1) {
+                        pageNumbers.push(
+                          <span
+                            key="ellipsis-2"
+                            className="hidden sm:inline px-2 text-gray-400"
+                          >
+                            ...
+                          </span>,
+                        );
+                      }
+                      pageNumbers.push(
+                        <Button
+                          key={pagination.totalPages}
+                          onClick={() => onPageChange(pagination.totalPages)}
+                          variant="outline"
+                          size="icon"
+                          className="hidden sm:inline-flex border-violet-300 text-violet-600 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-400 dark:hover:bg-violet-950/30"
+                        >
+                          {pagination.totalPages}
+                        </Button>,
+                      );
+                    }
+
+                    return pageNumbers;
+                  })()}
+                </div>
+
+                {/* Next Page */}
+                <Button
+                  onClick={() => onPageChange(pagination.page + 1)}
+                  disabled={pagination.page === pagination.totalPages}
+                  variant="outline"
+                  className="border-violet-300 text-violet-600 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-400 dark:hover:bg-violet-950/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Next page"
+                >
+                  <span className="hidden sm:inline">Next</span>
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+
+                {/* Last Page */}
+                <Button
+                  onClick={() => onPageChange(pagination.totalPages)}
+                  disabled={pagination.page === pagination.totalPages}
+                  variant="outline"
+                  size="icon"
+                  className="border-violet-300 text-violet-600 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-400 dark:hover:bg-violet-950/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Last page"
+                >
+                  <ChevronsRight className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>

@@ -32,7 +32,7 @@ const CRYPTOCURRENCIES = [
 export default function Home() {
   const { user, setBalance } = useAuthStore();
   const { orders, setOrders } = useOrders();
-  const { saveOrder, updateOrder, deleteOrder } = useOrdersHook();
+  const { saveOrder, updateOrder, deleteOrder, getAllOrders } = useOrdersHook();
 
   // Use selective subscriptions to prevent unnecessary re-renders
   const currentPrice = useCurrentPrice();
@@ -44,10 +44,47 @@ export default function Home() {
   const [mostProfitableTrade, setMostProfitableTrade] = useState(0);
   const [biggestLossTrade, setBiggestLossTrade] = useState(0);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+  });
+
   // Price fetcher runs in the background
   usePriceFetcher({ symbol: selectedCrypto, orders });
 
   const balance = user?.balance || 0;
+
+  // Fetch orders with pagination
+  const fetchOrders = useCallback(
+    async (page: number) => {
+      if (!user?.id) return;
+      const paginationData = await getAllOrders(user.id, page, 10);
+      if (paginationData) {
+        setPagination(paginationData);
+        setCurrentPage(page);
+      }
+    },
+    [user?.id, getAllOrders],
+  );
+
+  // Initial fetch
+  useEffect(() => {
+    if (user?.id) {
+      fetchOrders(1);
+    }
+  }, [user?.id]);
+
+  // Handle page change
+  const handlePageChange = useCallback(
+    (page: number) => {
+      fetchOrders(page);
+    },
+    [fetchOrders],
+  );
 
   const handleTrade = useCallback(
     (
@@ -58,13 +95,13 @@ export default function Home() {
         limitPrice?: number;
         stopLoss?: number;
         target?: number;
-      }
+      },
     ) => {
       if (currentPrice === null) return;
       // if any order is still open return
       if (
         orders.some(
-          (order) => order.status === "open" || order.status === "pending"
+          (order) => order.status === "open" || order.status === "pending",
         )
       ) {
         alert("Please square off all open orders before placing a new order");
@@ -92,7 +129,7 @@ export default function Home() {
 
         const newOrders = [newOrder, ...orders];
         setOrders(newOrders);
-        saveOrder(newOrder);
+        saveOrder(newOrder, () => fetchOrders(currentPage));
       } else {
         const cost = quantity * currentPrice;
 
@@ -115,7 +152,7 @@ export default function Home() {
         };
         const newOrders = [newOrder, ...orders];
         setOrders(newOrders);
-        saveOrder(newOrder);
+        saveOrder(newOrder, () => fetchOrders(currentPage));
       }
     },
     [
@@ -127,7 +164,9 @@ export default function Home() {
       setBalance,
       setOrders,
       saveOrder,
-    ]
+      fetchOrders,
+      currentPage,
+    ],
   );
 
   const handleUpdateTrade = useCallback(
@@ -171,9 +210,17 @@ export default function Home() {
       prevOrders[findOrderIndex] = findOrder;
 
       setOrders(prevOrders);
-      updateOrder(updatedOrderDetails);
+      updateOrder(updatedOrderDetails, () => fetchOrders(currentPage));
     },
-    [currentPrice, orders, balance, setOrders]
+    [
+      currentPrice,
+      orders,
+      balance,
+      setOrders,
+      updateOrder,
+      fetchOrders,
+      currentPage,
+    ],
   );
 
   const updateTradingSummary = useCallback(() => {
@@ -208,7 +255,7 @@ export default function Home() {
     const limitOrderIndex = copyOrders.findIndex(
       (order) =>
         order.status === "pending" &&
-        order?.order_details?.orderType === "limit"
+        order?.order_details?.orderType === "limit",
     );
     let limitOrder;
     if (limitOrderIndex !== -1) {
@@ -278,7 +325,7 @@ export default function Home() {
       // calculate total balance after square off
       const latestClosedOrder = ordersUpdate.sort(
         (a, b) =>
-          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
       )[0];
       let totalBalance = 0;
       if (
@@ -294,11 +341,19 @@ export default function Home() {
 
       // update order in database
       const order = ordersUpdate.find(
-        (order) => order.id === orderId && order.status === "closed"
+        (order) => order.id === orderId && order.status === "closed",
       );
-      if (order) updateOrder(order);
+      if (order) updateOrder(order, () => fetchOrders(currentPage));
     },
-    [currentPrice, orders, setBalance, setOrders, updateOrder]
+    [
+      currentPrice,
+      orders,
+      setBalance,
+      setOrders,
+      updateOrder,
+      fetchOrders,
+      currentPage,
+    ],
   );
 
   useEffect(() => {
@@ -306,7 +361,7 @@ export default function Home() {
 
     const copyOrders = [...orders];
     const openOrderIndex = copyOrders.findIndex(
-      (order) => order.status === "open"
+      (order) => order.status === "open",
     );
     let order;
     if (openOrderIndex !== -1) {
@@ -346,9 +401,9 @@ export default function Home() {
     (orderId: string) => {
       const updatedOrders = orders.filter((order) => order.id !== orderId);
       setOrders(updatedOrders);
-      deleteOrder(orderId);
+      deleteOrder(orderId, () => fetchOrders(currentPage));
     },
-    [orders, setOrders, deleteOrder]
+    [orders, setOrders, deleteOrder, fetchOrders, currentPage],
   );
 
   return (
@@ -416,6 +471,8 @@ export default function Home() {
             onSquareOff={handleSquareOff}
             onDeleteOrder={handleDeleteOrder}
             onUpdateTrade={handleUpdateTrade}
+            pagination={pagination}
+            onPageChange={handlePageChange}
           />
         </div>
       </div>

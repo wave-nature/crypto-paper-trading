@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { createSupabaseBrowserClient } from "@/utils/supabase/client";
+import useAccountHook from "@/hooks/useAccount";
 
 interface User {
   id: string;
@@ -20,26 +20,27 @@ const useAuthStore = create<AuthState>()((set, get) => ({
   user: null,
   setUser: (user) => set(() => ({ user })),
   setBalance: async (balance) => {
-    const supabase = createSupabaseBrowserClient();
     const user = get().user;
     if (!user) return;
     const updatedBalance = user.balance + balance;
+    const { updateAccount } = useAccountHook();
     try {
-      // Update local state on success
+      // Update local state optimistically
       set((state) => ({
         user: state.user ? { ...state.user, balance: updatedBalance } : null,
       }));
 
-      // Send Supabase request
-      const { error } = await supabase
-        .from("accounts")
-        .update({ balance: updatedBalance })
-        .eq("id", user.accountId);
-
-      if (error) throw error;
+      // Send API request
+      updateAccount({
+        accountId: user.accountId,
+        balance: updatedBalance,
+      });
     } catch (error) {
       console.error("Failed to update balance:", error);
-      // Optionally handle error (toast notification, etc.)
+      // Rollback on error
+      set((state) => ({
+        user: state.user ? { ...state.user, balance: user.balance } : null,
+      }));
     }
   },
 }));
