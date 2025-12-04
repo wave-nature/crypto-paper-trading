@@ -94,7 +94,6 @@ export function LoginForm() {
     // Simulate Google OAuth
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    console.log("[v0] Google login initiated");
     setIsLoading(false);
   };
 

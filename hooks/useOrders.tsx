@@ -1,6 +1,6 @@
 "use client";
 
-import { Order } from "@/types";
+import { Order, OrderTabs } from "@/types";
 import {
   ORDER_DELETED_SUCCESSFULLY,
   ORDER_NOT_DELETED,
@@ -66,10 +66,15 @@ const useOrdersHook = () => {
     }
   }
 
-  async function getAllOrders(userId: string, page = 1, limit = 10) {
+  async function getAllOrders(
+    userId: string,
+    page = 1,
+    limit = 10,
+    status: OrderTabs = "open",
+  ) {
     try {
       const response = await axios.get("/api/orders", {
-        params: { userId, page, limit },
+        params: { userId, page, limit, status },
       });
 
       setOrders(response.data.data);

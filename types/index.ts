@@ -1,7 +1,11 @@
+export type Symbols = "sol" | "btc" | "eth" | "xauusd";
+export type SymbolsUpperCase = "SOL" | "BTC" | "ETH" | "XAUUSD";
+export type OrderTabs = "pending" | "open" | "closed" | "all";
+
 export interface Order {
   id?: string;
   type: "buy" | "sell";
-  symbol: string;
+  symbol: SymbolsUpperCase | "";
   quantity: number;
   price: number;
   timestamp: string;
@@ -16,4 +20,7 @@ export interface Order {
   profit?: number;
   user_id?: string;
   updated_at?: string;
+  created_at?: string;
 }
+
+export type OpenOrders = Symbols[];

@@ -24,14 +24,16 @@ import {
   ChevronsLeft,
   ChevronsRight,
 } from "lucide-react";
-import { Order } from "@/types";
-import useStore, { useOverallPnl } from "@/store/usePositions";
+import { Order, OrderTabs, Symbols, SymbolsUpperCase } from "@/types";
+import { useCurrentPrices, useOverallPnl } from "@/store/usePositions";
 import Modal from "./ui/Modal";
-import { readableCurrency } from "@/utils/helpers";
+import { readableCurrency, formatDateTime } from "@/utils/helpers";
+import { throttle } from "@/utils/throttle";
+import usePositions from "@/store/usePositions";
 
 interface OrderTableProps {
+  orderTab: OrderTabs;
   orders: Order[];
-  currentPrice: number | null;
   selectedCrypto: string;
   onSquareOff: (orderId: string) => void;
   onDeleteOrder: (orderId: string) => void;
@@ -48,20 +50,23 @@ interface OrderTableProps {
     totalPages: number;
   };
   onPageChange: (page: number) => void;
+  onOrderTabChange: (tabId: OrderTabs) => void;
 }
 
-const tabs = [
-  { id: "positions", label: "Positions" },
-  { id: "open-orders", label: "Open Orders" },
-  { id: "stop-orders", label: "Stop Orders" },
-  { id: "fills", label: "Fills" },
-  { id: "order-history", label: "Order History" },
+const tabs: { id: OrderTabs; label: string }[] = [
+  { id: "open", label: "Positions" },
+  // { id: "limit-orders", label: "Limit Orders" },
+  // { id: "stop-orders", label: "Stop Orders" },
+  // { id: "fills", label: "Fills" },
+  { id: "all", label: "Order History" },
 ];
+
+const PNL_CALCULATION_THROTTLE = 250;
 
 interface OrderViewProps {
   orders: Order[];
-  calculateProfitLoss: (order: Order) => string;
-  getProfitLossClass: (value: string) => string;
+  calculateProfitLoss: (order: Order) => number;
+  getProfitLossClass: (value: number) => string;
   onSquareOff: (orderId: string) => void;
   handleDeleteClick: (orderId: string) => void;
   handleEditClick: (order: Order) => void;
@@ -177,7 +182,7 @@ const renderCardView = ({
 
             <div
               className={`mb-6 p-4 rounded-lg ${
-                profitLoss === "N/A"
+                profitLossClass === ""
                   ? "bg-gray-100 dark:bg-gray-800"
                   : profitLossClass.includes("green")
                     ? "bg-green-50 dark:bg-green-950/20"
@@ -192,16 +197,18 @@ const renderCardView = ({
                   profitLossClass || "text-gray-500"
                 }`}
               >
-                {profitLoss === "N/A"
-                  ? profitLoss
-                  : `${
-                      profitLoss.startsWith("-")
-                        ? "-"
-                        : "+" +
-                          readableCurrency(Math.abs(parseFloat(profitLoss)))
-                    }`}
+                {profitLoss ? readableCurrency(Math.abs(profitLoss)) : 0}
               </p>
             </div>
+
+            {order.created_at && (
+              <div className="mb-4 pb-4 border-b border-violet-100 dark:border-violet-900/30">
+                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                  Created:{" "}
+                  {formatDateTime(order.created_at, { showRelative: true })}
+                </p>
+              </div>
+            )}
 
             <div className="flex justify-end gap-2">
               {order.status === "open" && (
@@ -266,6 +273,7 @@ const renderTableView = ({
         <TableHead>Status</TableHead>
         <TableHead>Closed Price</TableHead>
         <TableHead>Profit/Loss</TableHead>
+        <TableHead>Created</TableHead>
         <TableHead>Action</TableHead>
       </TableRow>
     </TableHeader>
@@ -273,8 +281,7 @@ const renderTableView = ({
       {orders.map((order: Order) => {
         const profitLoss = calculateProfitLoss(order);
         const profitLossClass = getProfitLossClass(profitLoss);
-        const negative = profitLoss.includes("-");
-        const pnl = Math.abs(parseFloat(profitLoss));
+        const pnl = Math.abs(profitLoss);
         const readablePnl = readableCurrency(pnl);
         const orderId = order.id || "";
 
@@ -325,11 +332,17 @@ const renderTableView = ({
             </TableCell>
             <TableCell className={profitLossClass}>{readablePnl}</TableCell>
             <TableCell>
+              <span className="text-xs text-gray-600 dark:text-gray-400">
+                {order.created_at
+                  ? formatDateTime(order.created_at, { shortFormat: true })
+                  : "N/A"}
+              </span>
+            </TableCell>
+            <TableCell>
               <div className="flex space-x-2">
                 {order.status === "open" && (
                   <Button
                     onClick={() => {
-                      console.log("squaring off order", orderId);
                       onSquareOff(orderId);
                     }}
                     size="icon"
@@ -372,58 +385,91 @@ const renderTableView = ({
 
 export default function OrderTable({
   orders,
-  currentPrice,
-  selectedCrypto,
+  orderTab,
   onSquareOff,
   onDeleteOrder,
   onUpdateTrade,
   pagination,
   onPageChange,
+  onOrderTabChange,
 }: OrderTableProps) {
   const [isCardView, setIsCardView] = useState(false);
   const [deleteOrderId, setDeleteOrderId] = useState<string | null>(null);
   const [order, setOrder] = useState<Order | null>(null);
-  const [activeTab, setActiveTab] = useState("positions");
   const [quantity, setQuantity] = useState(0);
   const [stopLoss, setStopLoss] = useState("");
   const [target, setTarget] = useState("");
-  const { setPnL } = useStore();
+  const { setOverallPnl } = usePositions();
   const overallPnl = useOverallPnl();
-
-  // pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
-  const totalPages = Math.ceil(orders.length / itemsPerPage);
-
-  const paginatedOrders = orders.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage,
-  );
+  const currentPrices = useCurrentPrices();
 
   const calculateProfitLoss = (order: Order) => {
-    if (order.status === "pending") return "N/A";
+    if (order.status === "pending") return 0;
     if (order.status === "closed" && order.profit !== undefined) {
-      return order.profit.toFixed(2);
+      return order.profit;
     }
-    if (!currentPrice || order.symbol !== selectedCrypto) return "N/A";
-    const diff = currentPrice - order.price;
+
+    const diff =
+      currentPrices[order.symbol.toLowerCase() as Symbols] - order.price;
     const profitLoss = diff * order.quantity * (order.type === "buy" ? 1 : -1);
-    return profitLoss.toFixed(2);
+    return profitLoss;
   };
 
-  const getProfitLossClass = (value: string) => {
-    if (value === "N/A") return "";
-    const numValue = Number.parseFloat(value);
-    return numValue >= 0 ? "text-green-500" : "text-red-500";
+  const getProfitLossClass = (value: number) => {
+    if (!value) return "";
+    return value >= 0 ? "text-green-500" : "text-red-500";
   };
+
+  const calculatePnL = throttle(() => {
+    const currentOrders = [...orders];
+    const openOrders = currentOrders.some((order) => order.status === "open");
+    if (!openOrders) return;
+
+    const openOrdersEth = currentOrders.some(
+      (order) => order.symbol === "ETH" && order.status === "open",
+    );
+    const openOrdersSol = currentOrders.some(
+      (order) => order.symbol === "SOL" && order.status === "open",
+    );
+    const openOrdersXauusd = currentOrders.some(
+      (order) => order.symbol === "XAUUSD" && order.status === "open",
+    );
+    const openOrdersBtc = currentOrders.some(
+      (order) => order.symbol === "BTC" && order.status === "open",
+    );
+
+    if (openOrdersEth && !currentPrices.eth) return;
+
+    if (openOrdersSol && !currentPrices.sol) return;
+
+    if (openOrdersXauusd && !currentPrices.xauusd) return;
+
+    if (openOrdersBtc && !currentPrices.btc) return;
+
+    if (openOrders) {
+      const newPL = currentOrders.reduce((total, order) => {
+        if (order.status === "open") {
+          const price = currentPrices[order.symbol.toLowerCase() as Symbols];
+          const diff = price - order.price;
+          const orderPL =
+            diff * order.quantity * (order.type === "buy" ? 1 : -1);
+          return total + orderPL;
+        }
+        return total;
+      }, 0);
+
+      setOverallPnl(newPL);
+    }
+  }, PNL_CALCULATION_THROTTLE);
 
   useEffect(() => {
-    const order = orders.find((order) => order.status === "open");
-    if (!order) return;
-
-    const pnl = calculateProfitLoss(order);
-    setPnL(parseFloat(pnl));
-  }, [currentPrice]);
+    calculatePnL();
+  }, [
+    currentPrices.btc,
+    currentPrices.eth,
+    currentPrices.sol,
+    currentPrices.xauusd,
+  ]);
 
   const handleDeleteClick = (orderId: string) => {
     setDeleteOrderId(orderId);
@@ -455,6 +501,12 @@ export default function OrderTable({
     setOrder(null);
   };
 
+  const currentPrice =
+    (order &&
+      order.symbol &&
+      currentPrices[order.symbol.toLowerCase() as Symbols]) ||
+    0;
+
   return (
     <>
       <Card className="border-violet-500/20 bg-gradient-to-br from-violet-50/50 to-white dark:from-violet-950/20 dark:to-background">
@@ -477,28 +529,39 @@ export default function OrderTable({
             {tabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => onOrderTabChange(tab.id)}
                 className={`relative pb-3 text-sm font-medium transition-colors ${
-                  activeTab === tab.id
+                  orderTab === tab.id
                     ? "text-violet-600 dark:text-violet-400"
                     : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                 }`}
               >
                 {tab.label}
-                {activeTab === tab.id && (
+                {orderTab === tab.id && (
                   <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-violet-500 rounded-full" />
                 )}
               </button>
             ))}
           </div>
 
-          <div
-            className={`text-xl font-semibold mb-4 ${
-              overallPnl >= 0 ? "text-green-500" : "text-red-500"
-            }`}
-          >
-            Overall P/L: {overallPnl >= 0 ? "+" : "-"}
-            {readableCurrency(overallPnl)}
+          <div className="flex justify-between">
+            <div className="flex gap-2 item-center text-lg font-semibold mb-4">
+              Overall orders P/L:
+              <p className={`${1 >= 0 ? "text-green-500" : "text-red-500"}`}>
+                {readableCurrency(0)}
+              </p>
+            </div>
+
+            <div className="flex gap-2 item-center text-lg font-semibold mb-4">
+              Open orders P/L:
+              <p
+                className={`${
+                  overallPnl >= 0 ? "text-green-500" : "text-red-500"
+                }`}
+              >
+                {readableCurrency(Math.abs(overallPnl))}
+              </p>
+            </div>
           </div>
 
           {isCardView
@@ -518,6 +581,14 @@ export default function OrderTable({
                 handleDeleteClick,
                 handleEditClick,
               })}
+
+          {orders.length === 0 && (
+            <div className="flex justify-center items-center h-full my-4">
+              <p className="text-gray-600 dark:text-gray-400">
+                No orders found.
+              </p>
+            </div>
+          )}
 
           {/* Enhanced Pagination Controls */}
           {pagination.totalPages > 1 && (
@@ -731,9 +802,7 @@ export default function OrderTable({
             <CardContent className="p-2">
               <div className="space-y-4">
                 <div>
-                  <label className="block mb-1">
-                    Amount ({selectedCrypto}):
-                  </label>
+                  <label className="block mb-1">Amount ({order.symbol}):</label>
                   <input
                     type="number"
                     defaultValue={order.quantity}

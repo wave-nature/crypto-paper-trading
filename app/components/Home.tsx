@@ -5,39 +5,30 @@ import TradingViewChart from "./TradingViewChart";
 import TradingInterface from "./TradingInterface";
 import Portfolio from "./Portfolio";
 import OrderTable from "./OrderTable";
-import PriceFetcher from "./PriceFetcher";
 import TradingSummary from "./TradingSummary";
-import Navbar from "./Navbar";
-import { Order } from "@/types";
+import { Order, OrderTabs, Symbols, SymbolsUpperCase } from "@/types";
 import TradingInterfaceHorizontal from "./TradingInterfaceHorizontal";
 import useAuthStore from "@/store/useAuthStore";
 import useOrders from "@/store/useOrders";
 import toast from "react-hot-toast";
 import useOrdersHook from "@/hooks/useOrders";
 import usePriceFetcher from "@/hooks/usePriceFetcher";
-import { useCurrentPrice, useOverallPnl } from "@/store/usePositions";
+import { useCurrentPrices } from "@/store/usePositions";
 
-const CRYPTOCURRENCIES = [
-  "BTC",
-  "ETH",
-  "SOL",
-  "ADA",
-  "DOT",
-  "LINK",
-  "AVAX",
-  "MATIC",
-  "XAUUSD",
-];
+const CRYPTOCURRENCIES: SymbolsUpperCase[] = ["BTC", "ETH", "SOL", "XAUUSD"];
 
 export default function Home() {
   const { user, setBalance } = useAuthStore();
   const { orders, setOrders } = useOrders();
   const { saveOrder, updateOrder, deleteOrder, getAllOrders } = useOrdersHook();
+  const [orderTab, setOrderTab] = useState<OrderTabs>("open");
+
+  const currentPrices = useCurrentPrices();
 
   // Use selective subscriptions to prevent unnecessary re-renders
-  const currentPrice = useCurrentPrice();
-
-  const [selectedCrypto, setSelectedCrypto] = useState("BTC");
+  const [selectedCrypto, setSelectedCrypto] = useState<SymbolsUpperCase | "">(
+    "",
+  );
   const [fullChart, setFullChart] = useState(false);
   const [profitableTradesCount, setProfitableTradesCount] = useState(0);
   const [lossTradesCount, setLossTradesCount] = useState(0);
@@ -58,17 +49,24 @@ export default function Home() {
 
   const balance = user?.balance || 0;
 
+  useEffect(() => {
+    const crypto = localStorage.getItem("selectedCrypto");
+    if (crypto && CRYPTOCURRENCIES.includes(crypto as SymbolsUpperCase)) {
+      setSelectedCrypto(crypto as SymbolsUpperCase);
+    }
+  }, []);
+
   // Fetch orders with pagination
   const fetchOrders = useCallback(
     async (page: number) => {
       if (!user?.id) return;
-      const paginationData = await getAllOrders(user.id, page, 10);
+      const paginationData = await getAllOrders(user.id, page, 10, orderTab);
       if (paginationData) {
         setPagination(paginationData);
         setCurrentPage(page);
       }
     },
-    [user?.id, getAllOrders],
+    [user?.id, getAllOrders, orderTab],
   );
 
   // Initial fetch
@@ -76,7 +74,7 @@ export default function Home() {
     if (user?.id) {
       fetchOrders(1);
     }
-  }, [user?.id]);
+  }, [user?.id, orderTab]);
 
   // Handle page change
   const handlePageChange = useCallback(
@@ -90,6 +88,7 @@ export default function Home() {
     (
       type: "buy" | "sell",
       quantity: number,
+      symbol: SymbolsUpperCase | "",
       orderDetails: {
         orderType: "market" | "limit";
         limitPrice?: number;
@@ -97,16 +96,9 @@ export default function Home() {
         target?: number;
       },
     ) => {
+      const currentPrice = currentPrices[symbol.toLocaleLowerCase() as Symbols];
       if (currentPrice === null) return;
-      // if any order is still open return
-      if (
-        orders.some(
-          (order) => order.status === "open" || order.status === "pending",
-        )
-      ) {
-        alert("Please square off all open orders before placing a new order");
-        return;
-      }
+
       if (orderDetails.orderType === "limit") {
         const cost = quantity * orderDetails?.limitPrice!;
         if (cost > balance) {
@@ -118,7 +110,7 @@ export default function Home() {
 
         const newOrder: Order = {
           type,
-          symbol: selectedCrypto,
+          symbol,
           quantity,
           price: orderDetails.limitPrice!,
           timestamp: new Date().toISOString(),
@@ -142,7 +134,7 @@ export default function Home() {
 
         const newOrder: Order = {
           type,
-          symbol: selectedCrypto,
+          symbol,
           quantity,
           price: currentPrice,
           timestamp: new Date().toISOString(),
@@ -156,7 +148,6 @@ export default function Home() {
       }
     },
     [
-      currentPrice,
       orders,
       balance,
       selectedCrypto,
@@ -171,21 +162,15 @@ export default function Home() {
 
   const handleUpdateTrade = useCallback(
     (order: Order, quantity: number, stopLoss?: number, target?: number) => {
+      const symbol = order.symbol;
+      const currentPrice = currentPrices[symbol.toLocaleLowerCase() as Symbols];
+
       if (currentPrice === null) return;
       const prevCurrentPriceCost = order.quantity * order.price;
       const currentCost = quantity * currentPrice;
       const previousQuantity = order.quantity;
       const avgPrice =
         (prevCurrentPriceCost + currentCost) / (previousQuantity + quantity);
-
-      console.log("avg", {
-        prevCurrentPriceCost,
-        currentCost,
-        previousQuantity,
-        avgPrice,
-        quantity,
-      });
-
       if (currentCost > balance) {
         alert("Insufficient funds!");
         return;
@@ -212,15 +197,7 @@ export default function Home() {
       setOrders(prevOrders);
       updateOrder(updatedOrderDetails, () => fetchOrders(currentPage));
     },
-    [
-      currentPrice,
-      orders,
-      balance,
-      setOrders,
-      updateOrder,
-      fetchOrders,
-      currentPage,
-    ],
+    [orders, balance, setOrders, updateOrder, fetchOrders, currentPage],
   );
 
   const updateTradingSummary = useCallback(() => {
@@ -248,65 +225,67 @@ export default function Home() {
   }, [orders]);
 
   // handle limit order execution
-  useEffect(() => {
-    if (!currentPrice) return;
+  // useEffect(() => {
+  //   if (!currentPrice) return;
 
-    const copyOrders = [...orders];
-    const limitOrderIndex = copyOrders.findIndex(
-      (order) =>
-        order.status === "pending" &&
-        order?.order_details?.orderType === "limit",
-    );
-    let limitOrder;
-    if (limitOrderIndex !== -1) {
-      limitOrder = copyOrders[limitOrderIndex];
-    }
-    if (limitOrder) {
-      const cost = limitOrder.quantity * limitOrder?.price!;
-      const limitOrderPrice = Math.floor(limitOrder?.price);
-      const flooredCurrentPrice = Math.floor(currentPrice);
+  //   const copyOrders = [...orders];
+  //   const limitOrderIndex = copyOrders.findIndex(
+  //     (order) =>
+  //       order.status === "pending" &&
+  //       order?.order_details?.orderType === "limit",
+  //   );
+  //   let limitOrder;
+  //   if (limitOrderIndex !== -1) {
+  //     limitOrder = copyOrders[limitOrderIndex];
+  //   }
+  //   if (limitOrder) {
+  //     const cost = limitOrder.quantity * limitOrder?.price!;
+  //     const limitOrderPrice = Math.floor(limitOrder?.price);
+  //     const flooredCurrentPrice = Math.floor(currentPrice);
 
-      if (
-        limitOrder.type === "buy" &&
-        (flooredCurrentPrice === limitOrderPrice ||
-          flooredCurrentPrice - 1 === limitOrderPrice - 1 ||
-          flooredCurrentPrice + 1 === limitOrderPrice + 1)
-      ) {
-        if (cost > balance) {
-          alert("Insufficient funds!");
-          return;
-        }
-        setBalance(-cost);
-        // update order
-        limitOrder.status = "open";
-        copyOrders[limitOrderIndex] = limitOrder;
-        setOrders(copyOrders);
-      } else {
-        if (
-          flooredCurrentPrice === limitOrderPrice ||
-          flooredCurrentPrice - 0.5 === limitOrderPrice - 0.5 ||
-          flooredCurrentPrice + 0.5 === limitOrderPrice + 0.5
-        ) {
-          setBalance(-cost);
-          // update order
-          limitOrder.status = "open";
-          copyOrders[limitOrderIndex] = limitOrder;
-          setOrders(copyOrders);
-        }
-      }
-    }
-  }, [currentPrice, orders, balance, setBalance, setOrders]);
+  //     if (
+  //       limitOrder.type === "buy" &&
+  //       (flooredCurrentPrice === limitOrderPrice ||
+  //         flooredCurrentPrice - 1 === limitOrderPrice - 1 ||
+  //         flooredCurrentPrice + 1 === limitOrderPrice + 1)
+  //     ) {
+  //       if (cost > balance) {
+  //         alert("Insufficient funds!");
+  //         return;
+  //       }
+  //       setBalance(-cost);
+  //       // update order
+  //       limitOrder.status = "open";
+  //       copyOrders[limitOrderIndex] = limitOrder;
+  //       setOrders(copyOrders);
+  //     } else {
+  //       if (
+  //         flooredCurrentPrice === limitOrderPrice ||
+  //         flooredCurrentPrice - 0.5 === limitOrderPrice - 0.5 ||
+  //         flooredCurrentPrice + 0.5 === limitOrderPrice + 0.5
+  //       ) {
+  //         setBalance(-cost);
+  //         // update order
+  //         limitOrder.status = "open";
+  //         copyOrders[limitOrderIndex] = limitOrder;
+  //         setOrders(copyOrders);
+  //       }
+  //     }
+  //   }
+  // }, [currentPrice, orders, balance, setBalance, setOrders]);
 
   useEffect(() => {
     updateTradingSummary();
   }, [orders, updateTradingSummary]);
 
+  // HANDLE IT IN BETTER WAY
   const handleSquareOff = useCallback(
     (orderId: string) => {
-      if (currentPrice === null) return;
       const prevOrders = [...orders];
       const ordersUpdate: Order[] = prevOrders.map((order) => {
         if (order.id === orderId && order.status === "open") {
+          const currentPrice =
+            currentPrices[order.symbol.toLowerCase() as Symbols];
           const profit =
             order.type === "buy"
               ? (currentPrice - order.price) * order.quantity
@@ -345,57 +324,50 @@ export default function Home() {
       );
       if (order) updateOrder(order, () => fetchOrders(currentPage));
     },
-    [
-      currentPrice,
-      orders,
-      setBalance,
-      setOrders,
-      updateOrder,
-      fetchOrders,
-      currentPage,
-    ],
+    [orders, setBalance, setOrders, updateOrder, fetchOrders, currentPage],
   );
 
-  useEffect(() => {
-    if (!currentPrice) return;
+  // HANDLE SL
+  // useEffect(() => {
+  //   if (!currentPrice) return;
 
-    const copyOrders = [...orders];
-    const openOrderIndex = copyOrders.findIndex(
-      (order) => order.status === "open",
-    );
-    let order;
-    if (openOrderIndex !== -1) {
-      order = copyOrders[openOrderIndex];
-    }
+  //   const copyOrders = [...orders];
+  //   const openOrderIndex = copyOrders.findIndex(
+  //     (order) => order.status === "open",
+  //   );
+  //   let order;
+  //   if (openOrderIndex !== -1) {
+  //     order = copyOrders[openOrderIndex];
+  //   }
 
-    // handle sl
-    if (order && order?.order_details?.stopLoss && order?.id) {
-      const sl = Math.floor(order?.order_details?.stopLoss);
-      const flooredCurrentPrice = Math.floor(currentPrice);
+  //   // handle sl
+  //   if (order && order?.order_details?.stopLoss && order?.id) {
+  //     const sl = Math.floor(order?.order_details?.stopLoss);
+  //     const flooredCurrentPrice = Math.floor(currentPrice);
 
-      if (
-        sl === flooredCurrentPrice ||
-        sl - 0.5 === flooredCurrentPrice - 0.5 ||
-        sl + 0.5 === flooredCurrentPrice + 0.5
-      ) {
-        handleSquareOff(order.id);
-      }
-    }
+  //     if (
+  //       sl === flooredCurrentPrice ||
+  //       sl - 0.5 === flooredCurrentPrice - 0.5 ||
+  //       sl + 0.5 === flooredCurrentPrice + 0.5
+  //     ) {
+  //       handleSquareOff(order.id);
+  //     }
+  //   }
 
-    // handle target
-    if (order && order?.order_details?.target && order?.id) {
-      const target = Math.floor(order?.order_details?.target);
-      const flooredCurrentPrice = Math.floor(currentPrice);
+  //   // handle target
+  //   if (order && order?.order_details?.target && order?.id) {
+  //     const target = Math.floor(order?.order_details?.target);
+  //     const flooredCurrentPrice = Math.floor(currentPrice);
 
-      if (
-        target === flooredCurrentPrice ||
-        target - 0.5 === flooredCurrentPrice - 0.5 ||
-        target + 0.5 === flooredCurrentPrice + 0.5
-      ) {
-        handleSquareOff(order.id);
-      }
-    }
-  }, [currentPrice, orders, handleSquareOff]);
+  //     if (
+  //       target === flooredCurrentPrice ||
+  //       target - 0.5 === flooredCurrentPrice - 0.5 ||
+  //       target + 0.5 === flooredCurrentPrice + 0.5
+  //     ) {
+  //       handleSquareOff(order.id);
+  //     }
+  //   }
+  // }, [orders, handleSquareOff]);
 
   const handleDeleteOrder = useCallback(
     (orderId: string) => {
@@ -418,7 +390,6 @@ export default function Home() {
             <div className="w-[95%]">
               <TradingInterfaceHorizontal
                 onTrade={handleTrade}
-                currentPrice={currentPrice}
                 selectedCrypto={selectedCrypto}
                 onCryptoChange={setSelectedCrypto}
                 cryptocurrencies={CRYPTOCURRENCIES}
@@ -435,7 +406,7 @@ export default function Home() {
           </button>
         </div>
 
-        <div className={`grid ${fullChart ? "" : "grid-cols-[3fr_1fr]"} gap-6`}>
+        <div className={`grid ${fullChart ? "" : "grid-cols-[5fr_1fr]"} gap-6`}>
           <div className="bg-white rounded-lg shadow-md overflow-hidden h-[90vh]">
             <TradingViewChart symbol={selectedCrypto} />
           </div>
@@ -443,7 +414,6 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
               <TradingInterface
                 onTrade={handleTrade}
-                currentPrice={currentPrice}
                 selectedCrypto={selectedCrypto}
                 onCryptoChange={setSelectedCrypto}
                 cryptocurrencies={CRYPTOCURRENCIES}
@@ -466,13 +436,15 @@ export default function Home() {
           </div>
           <OrderTable
             orders={orders}
-            currentPrice={currentPrice}
             selectedCrypto={selectedCrypto}
             onSquareOff={handleSquareOff}
             onDeleteOrder={handleDeleteOrder}
             onUpdateTrade={handleUpdateTrade}
             pagination={pagination}
             onPageChange={handlePageChange}
+            onOrderTabChange={setOrderTab}
+            orderTab={orderTab}
+            
           />
         </div>
       </div>
