@@ -582,6 +582,14 @@ export default function OrderTable({
                 handleEditClick,
               })}
 
+          {orders.length === 0 && (
+            <div className="flex justify-center items-center h-full my-4">
+              <p className="text-gray-600 dark:text-gray-400">
+                No orders found.
+              </p>
+            </div>
+          )}
+
           {/* Enhanced Pagination Controls */}
           {pagination.totalPages > 1 && (
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 px-2">

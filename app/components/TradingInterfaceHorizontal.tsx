@@ -95,6 +95,7 @@ export default function TradingInterfaceHorizontal({
     }
     return total;
   }, 0);
+
   // open order
   const order = orders.find(
     (order) => order.status === "open" && order.symbol === selectedCrypto,
@@ -200,11 +201,9 @@ export default function TradingInterfaceHorizontal({
             <div className="flex items-center gap-3 mr-2">
               <span>P/L:</span>
               <span
-                className={
-                  selectedCryptoPnl >= 0 ? "text-green-500" : "text-red-500"
-                }
+                className={profitLoss >= 0 ? "text-green-500" : "text-red-500"}
               >
-                {`${profitLoss.startsWith("-") ? "" : "+"}${readableCurrency(parseFloat(profitLoss))}`}
+                {readableCurrency(profitLoss)}
               </span>
             </div>
 
