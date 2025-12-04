@@ -8,6 +8,7 @@ import { AUTH_LOGIN } from "@/constants/navigation";
 import { createSupabaseBrowserClient } from "@/utils/supabase/client";
 import Navbar from "../components/Navbar";
 import useAccountHook from "@/hooks/useAccount";
+import { LucideGamepad2 } from "lucide-react";
 
 export default function AuthLayout({
   children,

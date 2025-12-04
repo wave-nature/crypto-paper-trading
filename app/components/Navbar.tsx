@@ -37,14 +37,13 @@ import {
 import useAuthStore from "@/store/useAuthStore";
 import usePositions from "@/store/usePositions";
 import { readableCurrency } from "@/utils/helpers";
-import { read } from "fs";
 
 export default function Navbar() {
   const [showBalanceModal, setShowBalanceModal] = useState(false);
   const [addAmount, setAddAmount] = useState("");
   const supabase = createSupabaseBrowserClient();
   const { user, setBalance } = useAuthStore();
-  const { pnl } = usePositions();
+  const { overallPnl } = usePositions();
 
   const handleAddMoney = () => {
     const amount = parseFloat(addAmount);
@@ -133,18 +132,18 @@ export default function Navbar() {
               {/* Current P/L */}
               <div
                 className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg ${
-                  pnl >= 0
+                  overallPnl >= 0
                     ? "bg-green-50 text-green-700 border border-green-200"
                     : "bg-red-50 text-red-700 border border-red-200"
                 }`}
               >
-                {pnl >= 0 ? (
+                {overallPnl >= 0 ? (
                   <TrendingUp className="h-4 w-4" />
                 ) : (
                   <TrendingDown className="h-4 w-4" />
                 )}
                 <span className="font-semibold text-sm">
-                  {readableCurrency(pnl) || "0.00"}
+                  {readableCurrency(Math.abs(overallPnl)) || "0.00"}
                 </span>
               </div>
 

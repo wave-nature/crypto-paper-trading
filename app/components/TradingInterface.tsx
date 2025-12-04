@@ -3,16 +3,18 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import useStore from "@/store/usePositions";
+import useStore, { useCurrentPrices } from "@/store/usePositions";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
-import { Order } from "@/types";
+import { Order, Symbols, SymbolsUpperCase } from "@/types";
 import { readableCurrency } from "@/utils/helpers";
+import toast from "react-hot-toast";
 
 interface TradingInterfaceProps {
   onTrade: (
     type: "buy" | "sell",
     amount: number,
+    symbol: SymbolsUpperCase | "",
     orderDetails: {
       orderType: "market" | "limit";
       limitPrice?: number;
@@ -20,16 +22,14 @@ interface TradingInterfaceProps {
       target?: number;
     },
   ) => void;
-  currentPrice: number | null;
-  selectedCrypto: string;
-  onCryptoChange: (crypto: string) => void;
+  selectedCrypto: SymbolsUpperCase | "";
+  onCryptoChange: (crypto: SymbolsUpperCase | "") => void;
   onSquareOff: (orderId: string) => void;
   orders: Order[];
   cryptocurrencies: string[];
 }
 
 export default function TradingInterface({
-  currentPrice,
   selectedCrypto,
   orders,
   cryptocurrencies,
@@ -42,9 +42,17 @@ export default function TradingInterface({
   const [limitPrice, setLimitPrice] = useState("");
   const [stopLoss, setStopLoss] = useState("");
   const [target, setTarget] = useState("");
-  const { pnl } = useStore();
+  const currentPrices = useCurrentPrices();
+  const currentPrice = selectedCrypto
+    ? currentPrices[selectedCrypto.toLowerCase() as Symbols]
+    : 0;
 
   const handleTrade = (type: "buy" | "sell") => {
+    if (!selectedCrypto) {
+      toast.error("Please select a crypto");
+      return;
+    }
+
     const parsedAmount = Number.parseFloat(amount);
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
       alert("Please enter a valid amount");
@@ -71,31 +79,42 @@ export default function TradingInterface({
       orderDetails.limitPrice = parsedLimitPrice;
     }
 
-    onTrade(type, parsedAmount, orderDetails);
+    onTrade(type, parsedAmount, selectedCrypto!, orderDetails);
     setAmount("");
     setLimitPrice("");
     setStopLoss("");
     setTarget("");
   };
 
-  const profitLoss = pnl.toFixed(2);
+  const profitLoss = orders.reduce((total, order) => {
+    if (order.status === "open" && order.symbol === selectedCrypto) {
+      const price = currentPrices[selectedCrypto.toLowerCase() as Symbols];
+      const diff = price - order.price;
+      const orderPL = diff * order.quantity * (order.type === "buy" ? 1 : -1);
+      return total + orderPL;
+    }
+    return total;
+  }, 0);
+
   // open order
-  const order = orders.find((order) => order.status === "open");
+  const order = orders.find((order) => order.status === "open" && order.symbol === selectedCrypto);
 
   return (
     <Card className="h-full border-violet-500/20 bg-gradient-to-br from-violet-50/50 to-white dark:from-violet-950/20 dark:to-background">
-      <CardHeader>
-        <CardTitle className="bg-gradient-to-r from-violet-600 to-violet-400 bg-clip-text text-transparent">
-          Trading Interface
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-6">
+      <CardTitle className="bg-gradient-to-r from-violet-600 to-violet-400 bg-clip-text text-transparent p-4 pb-2">
+        Place Order
+      </CardTitle>
+      <CardContent className="p-4">
         <div className="space-y-4">
           <div>
             <label className="block mb-1">Cryptocurrency:</label>
             <select
               value={selectedCrypto}
-              onChange={(e) => onCryptoChange(e.target.value)}
+              onChange={(e) => {
+                const crypto = e.target.value as SymbolsUpperCase;
+                onCryptoChange(crypto);
+                localStorage.setItem("selectedCrypto", crypto);
+              }}
               className="w-full p-2 border border-violet-200 rounded focus:outline-none focus:ring-2 focus:ring-violet-500"
             >
               {cryptocurrencies.map((crypto) => (
@@ -190,15 +209,25 @@ export default function TradingInterface({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <span>P/L:</span>
-              <span className={pnl >= 0 ? "text-green-500" : "text-red-500"}>
-                {`${profitLoss.startsWith("-") ? "" : "+"}${readableCurrency(parseFloat(profitLoss))}`}
+              <span
+                className={profitLoss >= 0 ? "text-green-500" : "text-red-500"}
+              >
+                {readableCurrency(profitLoss)}
               </span>
             </div>
 
             <div className="flex space-x-2">
               {order && (
                 <Button
-                  onClick={() => onSquareOff(order.id || "")}
+                  onClick={() => {
+                    orders.forEach(
+                      (order) =>
+                        order?.id &&
+                        order.symbol === selectedCrypto &&
+                        order.status === "open" &&
+                        onSquareOff(order.id),
+                    );
+                  }}
                   size="icon"
                   variant="outline"
                   className="border-violet-500 text-violet-500 hover:bg-violet-50"

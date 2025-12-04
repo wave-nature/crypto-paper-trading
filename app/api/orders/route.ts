@@ -8,6 +8,7 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
     const userId = searchParams.get("userId");
+    const status = searchParams.get("status") || "all";
 
     // Validate inputs
     if (!userId) {
@@ -30,11 +31,18 @@ export async function GET(request: NextRequest) {
     // Calculate offset
     const offset = (page - 1) * limit;
 
-    // Get total count
-    const { count, error: countError } = await supabase
+    // Build count query
+    let countQuery = supabase
       .from("orders")
       .select("*", { count: "exact", head: true })
       .eq("user_id", userId);
+
+    // Apply status filter if not "all"
+    if (status !== "all") {
+      countQuery = countQuery.eq("status", status);
+    }
+
+    const { count, error: countError } = await countQuery;
 
     if (countError) {
       console.error("Error fetching orders count:", countError);
@@ -44,11 +52,16 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get paginated data
-    const { data, error } = await supabase
-      .from("orders")
-      .select("*")
-      .eq("user_id", userId)
+    // Build data query - sort by status (open first) then by created_at
+    let dataQuery = supabase.from("orders").select("*").eq("user_id", userId);
+
+    // Apply status filter if not "all"
+    if (status !== "all") {
+      dataQuery = dataQuery.eq("status", status);
+    }
+
+    const { data, error } = await dataQuery
+      .order("status", { ascending: false })
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
 
