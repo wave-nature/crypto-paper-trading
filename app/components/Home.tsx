@@ -51,10 +51,15 @@ export default function Home() {
 
   useEffect(() => {
     const crypto = localStorage.getItem("selectedCrypto");
+    const openOrder = orders.find((order) => order.status === "open");
     if (crypto && CRYPTOCURRENCIES.includes(crypto as SymbolsUpperCase)) {
       setSelectedCrypto(crypto as SymbolsUpperCase);
+    } else if (openOrder) {
+      setSelectedCrypto(openOrder.symbol);
+    } else {
+      setSelectedCrypto("BTC");
     }
-  }, []);
+  }, [orders]);
 
   // Fetch orders with pagination
   const fetchOrders = useCallback(
@@ -444,7 +449,6 @@ export default function Home() {
             onPageChange={handlePageChange}
             onOrderTabChange={setOrderTab}
             orderTab={orderTab}
-            
           />
         </div>
       </div>
