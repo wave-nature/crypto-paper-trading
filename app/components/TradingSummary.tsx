@@ -5,12 +5,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { readableCurrency } from "@/utils/helpers";
 import useSummaryHook from "@/hooks/useSummary";
 import useAuthStore from "@/store/useAuthStore";
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
 
 type TabType = "today" | "overall";
 
 export default function TradingSummary() {
   const [activeTab, setActiveTab] = useState<TabType>("today");
   const [summary, setSummary] = useState<any>(null);
+  const [loader, setLoader] = useState(false);
   const { user } = useAuthStore();
   const { getSummary } = useSummaryHook();
   useEffect(() => {
@@ -28,14 +31,17 @@ export default function TradingSummary() {
 
   async function fetchSummary(tab: string) {
     if (user?.id) {
+      setLoader(true);
       const { data, error } = await getSummary({
         userId: user?.id,
         type: tab,
       });
       if (error) {
+        setLoader(false);
         console.error(error);
         return;
       }
+      setLoader(false);
       setSummary(data);
     }
   }
@@ -78,60 +84,77 @@ export default function TradingSummary() {
           </div>
         </div>
       </CardHeader>
+
       <CardContent>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground">
-              Profitable Trades
-            </h3>
-            <p className="text-2xl font-bold text-violet-600">
-              {summary?.profitableTrades || 0} (
-              {profitablePercentage.toFixed(2)}%)
-            </p>
+        {loader ? (
+          // Skeleton loader matching the exact layout
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {[...Array(6)].map((_, index) => (
+              <div key={index}>
+                <h3 className="text-sm font-medium text-muted-foreground mb-2">
+                  <Skeleton width={120} height={14} />
+                </h3>
+                <p className="text-2xl font-bold">
+                  <Skeleton width={100} height={32} />
+                </p>
+              </div>
+            ))}
           </div>
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground">
-              Loss Trades
-            </h3>
-            <p className="text-2xl font-bold">
-              {summary?.lossTrades || 0} ({lossPercentage.toFixed(2)}%)
-            </p>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground">
+                Profitable Trades
+              </h3>
+              <p className="text-2xl font-bold text-violet-600">
+                {summary?.profitableTrades || 0} (
+                {profitablePercentage.toFixed(2)}%)
+              </p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground">
+                Loss Trades
+              </h3>
+              <p className="text-2xl font-bold">
+                {summary?.lossTrades || 0} ({lossPercentage.toFixed(2)}%)
+              </p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground">
+                Total Trades
+              </h3>
+              <p className="text-2xl font-bold text-violet-600">
+                {summary?.totalTrades || 0}
+              </p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground">
+                Most Profitable Trade
+              </h3>
+              <p className="text-2xl font-bold text-green-500">
+                {readableCurrency(summary?.mostProfitableTrade || 0)}
+              </p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground">
+                Biggest Loss Trade
+              </h3>
+              <p className="text-2xl font-bold text-red-500">
+                {readableCurrency(summary?.mostLossTrade || 0)}
+              </p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground">
+                Overall P/L
+              </h3>
+              <p
+                className={`text-2xl font-bold ${summary?.overallPnl >= 0 ? "text-green-500" : "text-red-500"}`}
+              >
+                {readableCurrency(Math.abs(summary?.overallPnl || 0))}
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground">
-              Total Trades
-            </h3>
-            <p className="text-2xl font-bold text-violet-600">
-              {summary?.totalTrades || 0}
-            </p>
-          </div>
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground">
-              Most Profitable Trade
-            </h3>
-            <p className="text-2xl font-bold text-green-500">
-              {readableCurrency(summary?.mostProfitableTrade || 0)}
-            </p>
-          </div>
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground">
-              Biggest Loss Trade
-            </h3>
-            <p className="text-2xl font-bold text-red-500">
-              {readableCurrency(summary?.mostLossTrade || 0)}
-            </p>
-          </div>
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground">
-              Overall P/L
-            </h3>
-            <p
-              className={`text-2xl font-bold ${summary?.overallPnl >= 0 ? "text-green-500" : "text-red-500"}`}
-            >
-              {readableCurrency(Math.abs(summary?.overallPnl || 0))}
-            </p>
-          </div>
-        </div>
+        )}
       </CardContent>
     </Card>
   );

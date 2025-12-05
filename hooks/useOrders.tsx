@@ -14,9 +14,10 @@ import {
 import toast from "react-hot-toast";
 import useOrders from "@/store/useOrders";
 import axios from "axios";
+import { set } from "react-hook-form";
 
 const useOrdersHook = () => {
-  const { setOrders } = useOrders();
+  const { setOrders, setLoading } = useOrders();
 
   async function saveOrder(order: Order, onSuccess?: () => void) {
     try {
@@ -73,6 +74,7 @@ const useOrdersHook = () => {
     status: OrderTabs = "open",
   ) {
     try {
+      setLoading(true);
       const response = await axios.get("/api/orders", {
         params: { userId, page, limit, status },
       });
@@ -83,6 +85,8 @@ const useOrdersHook = () => {
       console.error("Error fetching orders:", error);
       toast.error(ORDERS_NOT_FETCHED);
       return null;
+    } finally {
+      setLoading(false);
     }
   }
 

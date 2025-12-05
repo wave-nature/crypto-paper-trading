@@ -30,6 +30,9 @@ import Modal from "./ui/Modal";
 import { readableCurrency, formatDateTime } from "@/utils/helpers";
 import { throttle } from "@/utils/throttle";
 import usePositions from "@/store/usePositions";
+import useOrders from "@/store/useOrders";
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
 
 interface OrderTableProps {
   orderTab: OrderTabs;
@@ -64,6 +67,7 @@ const tabs: { id: OrderTabs; label: string }[] = [
 const PNL_CALCULATION_THROTTLE = 250;
 
 interface OrderViewProps {
+  loading: boolean;
   orders: Order[];
   calculateProfitLoss: (order: Order) => number;
   getProfitLossClass: (value: number) => string;
@@ -73,6 +77,7 @@ interface OrderViewProps {
 }
 
 const renderCardView = ({
+  loading,
   orders,
   calculateProfitLoss,
   getProfitLossClass,
@@ -81,178 +86,241 @@ const renderCardView = ({
   handleEditClick,
 }: OrderViewProps) => (
   <div className="space-y-4">
-    {orders.map((order) => {
-      const profitLoss = calculateProfitLoss(order);
-      const profitLossClass = getProfitLossClass(profitLoss);
+    {loading
+      ? // Loading skeleton with exact same layout
+        [...Array(3)].map((_, index) => (
+          <Card
+            key={index}
+            className="border-violet-200 bg-gradient-to-br from-white to-violet-50/30 dark:from-gray-900 dark:to-violet-950/20"
+          >
+            <CardContent className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <div className="flex items-center gap-3">
+                  <Skeleton width={60} height={28} borderRadius={8} />
+                  <Skeleton width={60} height={28} borderRadius={8} />
+                </div>
+                <Skeleton width={60} height={24} borderRadius={8} />
+              </div>
 
-      return (
-        <Card
-          key={order.id}
-          className="border-violet-200 bg-gradient-to-br from-white to-violet-50/30 dark:from-gray-900 dark:to-violet-950/20 hover:shadow-lg hover:border-violet-300 transition-all duration-300"
-        >
-          <CardContent className="p-6">
-            <div className="flex justify-between items-center mb-6">
-              <div className="flex items-center gap-3">
-                <Badge
-                  variant={order.type === "buy" ? "default" : "secondary"}
-                  className={`text-sm px-3 py-1 ${
-                    order.type === "buy"
-                      ? "bg-green-500 hover:bg-green-600"
-                      : "bg-red-500 hover:bg-red-600"
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="space-y-1">
+                  <Skeleton width={60} height={12} />
+                  <Skeleton width={80} height={20} />
+                </div>
+                <div className="space-y-1">
+                  <Skeleton width={60} height={12} />
+                  <Skeleton width={100} height={20} />
+                </div>
+                <div className="space-y-1">
+                  <Skeleton width={80} height={12} />
+                  <Skeleton width={90} height={20} />
+                </div>
+                <div className="space-y-1">
+                  <Skeleton width={90} height={12} />
+                  <Skeleton width={80} height={20} />
+                </div>
+                <div className="space-y-1">
+                  <Skeleton width={60} height={12} />
+                  <Skeleton width={80} height={20} />
+                </div>
+                <div className="space-y-1">
+                  <Skeleton width={70} height={12} />
+                  <Skeleton width={80} height={20} />
+                </div>
+              </div>
+
+              <div className="mb-6 p-4 rounded-lg bg-gray-100 dark:bg-gray-800">
+                <Skeleton width={80} height={12} className="mb-1" />
+                <Skeleton width={120} height={32} />
+              </div>
+
+              <div className="mb-4 pb-4 border-b border-violet-100 dark:border-violet-900/30">
+                <Skeleton width={180} height={14} />
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Skeleton width={110} height={36} borderRadius={6} />
+                <Skeleton width={90} height={36} borderRadius={6} />
+                <Skeleton width={90} height={36} borderRadius={6} />
+              </div>
+            </CardContent>
+          </Card>
+        ))
+      : orders.map((order) => {
+          const profitLoss = calculateProfitLoss(order);
+          const profitLossClass = getProfitLossClass(profitLoss);
+
+          return (
+            <Card
+              key={order.id}
+              className="border-violet-200 bg-gradient-to-br from-white to-violet-50/30 dark:from-gray-900 dark:to-violet-950/20 hover:shadow-lg hover:border-violet-300 transition-all duration-300"
+            >
+              <CardContent className="p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <div className="flex items-center gap-3">
+                    <Badge
+                      variant={order.type === "buy" ? "default" : "secondary"}
+                      className={`text-sm px-3 py-1 ${
+                        order.type === "buy"
+                          ? "bg-green-500 hover:bg-green-600"
+                          : "bg-red-500 hover:bg-red-600"
+                      }`}
+                    >
+                      {order.type.toUpperCase()}
+                    </Badge>
+                    <Badge
+                      variant={
+                        order.status === "open" ? "outline" : "secondary"
+                      }
+                      className="text-sm px-3 py-1 border-violet-300"
+                    >
+                      {order.status.toUpperCase()}
+                    </Badge>
+                  </div>
+                  {order?.order_details?.orderType && (
+                    <Badge
+                      className={`${
+                        order?.order_details?.orderType === "limit"
+                          ? "black"
+                          : "bg-violet-600"
+                      } text-white text-xs px-2 py-1`}
+                    >
+                      {order.order_details.orderType.toUpperCase()}
+                    </Badge>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="space-y-1">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">
+                      Symbol
+                    </p>
+                    <p className="text-base font-semibold text-gray-900 dark:text-white">
+                      {order.symbol}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">
+                      Amount
+                    </p>
+                    <p className="text-base font-semibold text-gray-900 dark:text-white">
+                      {order.quantity?.toFixed(8)}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">
+                      Entry Price
+                    </p>
+                    <p className="text-base font-semibold text-gray-900 dark:text-white">
+                      {readableCurrency(order.price || 0)}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">
+                      Closed Price
+                    </p>
+                    <p className="text-base font-semibold text-gray-900 dark:text-white">
+                      {order.closed_price
+                        ? readableCurrency(order.closed_price || 0)
+                        : "N/A"}
+                    </p>
+                  </div>
+                  {order?.order_details?.target && (
+                    <div className="space-y-1">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">
+                        Target
+                      </p>
+                      <p className="text-base font-semibold text-green-600 dark:text-green-400">
+                        {readableCurrency(order.order_details.target || 0)}
+                      </p>
+                    </div>
+                  )}
+                  {order?.order_details?.stopLoss && (
+                    <div className="space-y-1">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">
+                        Stop Loss
+                      </p>
+                      <p className="text-base font-semibold text-red-600 dark:text-red-400">
+                        {readableCurrency(order.order_details?.stopLoss || 0)}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div
+                  className={`mb-6 p-4 rounded-lg ${
+                    profitLossClass === ""
+                      ? "bg-gray-100 dark:bg-gray-800"
+                      : profitLossClass.includes("green")
+                        ? "bg-green-50 dark:bg-green-950/20"
+                        : "bg-red-50 dark:bg-red-950/20"
                   }`}
                 >
-                  {order.type.toUpperCase()}
-                </Badge>
-                <Badge
-                  variant={order.status === "open" ? "outline" : "secondary"}
-                  className="text-sm px-3 py-1 border-violet-300"
-                >
-                  {order.status.toUpperCase()}
-                </Badge>
-              </div>
-              {order?.order_details?.orderType && (
-                <Badge
-                  className={`${
-                    order?.order_details?.orderType === "limit"
-                      ? "black"
-                      : "bg-violet-600"
-                  } text-white text-xs px-2 py-1`}
-                >
-                  {order.order_details.orderType.toUpperCase()}
-                </Badge>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="space-y-1">
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">
-                  Symbol
-                </p>
-                <p className="text-base font-semibold text-gray-900 dark:text-white">
-                  {order.symbol}
-                </p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">
-                  Amount
-                </p>
-                <p className="text-base font-semibold text-gray-900 dark:text-white">
-                  {order.quantity?.toFixed(8)}
-                </p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">
-                  Entry Price
-                </p>
-                <p className="text-base font-semibold text-gray-900 dark:text-white">
-                  {readableCurrency(order.price || 0)}
-                </p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">
-                  Closed Price
-                </p>
-                <p className="text-base font-semibold text-gray-900 dark:text-white">
-                  {order.closed_price
-                    ? readableCurrency(order.closed_price || 0)
-                    : "N/A"}
-                </p>
-              </div>
-              {order?.order_details?.target && (
-                <div className="space-y-1">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">
-                    Target
+                  <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide mb-1">
+                    Profit/Loss
                   </p>
-                  <p className="text-base font-semibold text-green-600 dark:text-green-400">
-                    {readableCurrency(order.order_details.target || 0)}
+                  <p
+                    className={`text-2xl font-bold ${
+                      profitLossClass || "text-gray-500"
+                    }`}
+                  >
+                    {profitLoss ? readableCurrency(Math.abs(profitLoss)) : 0}
                   </p>
                 </div>
-              )}
-              {order?.order_details?.stopLoss && (
-                <div className="space-y-1">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">
-                    Stop Loss
-                  </p>
-                  <p className="text-base font-semibold text-red-600 dark:text-red-400">
-                    {readableCurrency(order.order_details?.stopLoss || 0)}
-                  </p>
+
+                {order.created_at && (
+                  <div className="mb-4 pb-4 border-b border-violet-100 dark:border-violet-900/30">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                      Created:{" "}
+                      {formatDateTime(order.created_at, { showRelative: true })}
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-2">
+                  {order.status === "open" && (
+                    <Button
+                      onClick={() => onSquareOff(order?.id || "")}
+                      size="sm"
+                      variant="outline"
+                      className="border-violet-500 text-violet-500 hover:bg-violet-50 dark:hover:bg-violet-950/30 flex items-center gap-2"
+                    >
+                      <X className="h-4 w-4" />
+                      <span>Square Off</span>
+                    </Button>
+                  )}
+                  {order.status === "open" && (
+                    <Button
+                      onClick={() => {
+                        handleEditClick(order);
+                      }}
+                      size="sm"
+                      variant="outline"
+                      className="border-blue-500 text-blue-500 hover:bg-violet-50 flex items-center gap-2"
+                    >
+                      <Edit2Icon className="h-4 w-4" />
+                      <span>Edit</span>
+                    </Button>
+                  )}
+                  <Button
+                    onClick={() => handleDeleteClick(order?.id || "")}
+                    size="sm"
+                    variant="outline"
+                    className="border-red-500 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 flex items-center gap-2"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    <span>Delete</span>
+                  </Button>
                 </div>
-              )}
-            </div>
-
-            <div
-              className={`mb-6 p-4 rounded-lg ${
-                profitLossClass === ""
-                  ? "bg-gray-100 dark:bg-gray-800"
-                  : profitLossClass.includes("green")
-                    ? "bg-green-50 dark:bg-green-950/20"
-                    : "bg-red-50 dark:bg-red-950/20"
-              }`}
-            >
-              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide mb-1">
-                Profit/Loss
-              </p>
-              <p
-                className={`text-2xl font-bold ${
-                  profitLossClass || "text-gray-500"
-                }`}
-              >
-                {profitLoss ? readableCurrency(Math.abs(profitLoss)) : 0}
-              </p>
-            </div>
-
-            {order.created_at && (
-              <div className="mb-4 pb-4 border-b border-violet-100 dark:border-violet-900/30">
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-                  Created:{" "}
-                  {formatDateTime(order.created_at, { showRelative: true })}
-                </p>
-              </div>
-            )}
-
-            <div className="flex justify-end gap-2">
-              {order.status === "open" && (
-                <Button
-                  onClick={() => onSquareOff(order?.id || "")}
-                  size="sm"
-                  variant="outline"
-                  className="border-violet-500 text-violet-500 hover:bg-violet-50 dark:hover:bg-violet-950/30 flex items-center gap-2"
-                >
-                  <X className="h-4 w-4" />
-                  <span>Square Off</span>
-                </Button>
-              )}
-              {order.status === "open" && (
-                <Button
-                  onClick={() => {
-                    handleEditClick(order);
-                  }}
-                  size="sm"
-                  variant="outline"
-                  className="border-blue-500 text-blue-500 hover:bg-violet-50 flex items-center gap-2"
-                >
-                  <Edit2Icon className="h-4 w-4" />
-                  <span>Edit</span>
-                </Button>
-              )}
-              <Button
-                onClick={() => handleDeleteClick(order?.id || "")}
-                size="sm"
-                variant="outline"
-                className="border-red-500 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 flex items-center gap-2"
-              >
-                <Trash2 className="h-4 w-4" />
-                <span>Delete</span>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      );
-    })}
+              </CardContent>
+            </Card>
+          );
+        })}
   </div>
 );
 
 const renderTableView = ({
+  loading,
   orders,
   calculateProfitLoss,
   getProfitLossClass,
@@ -278,107 +346,155 @@ const renderTableView = ({
       </TableRow>
     </TableHeader>
     <TableBody>
-      {orders.map((order: Order) => {
-        const profitLoss = calculateProfitLoss(order);
-        const profitLossClass = getProfitLossClass(profitLoss);
-        const pnl = Math.abs(profitLoss);
-        const readablePnl = readableCurrency(pnl);
-        const orderId = order.id || "";
+      {loading
+        ? // Loading skeleton with exact same table layout
+          [...Array(5)].map((_, index) => (
+            <TableRow key={index}>
+              <TableCell>
+                <Skeleton width={70} height={24} borderRadius={8} />
+              </TableCell>
+              <TableCell>
+                <Skeleton width={60} height={24} borderRadius={8} />
+              </TableCell>
+              <TableCell>
+                <Skeleton width={50} height={20} />
+              </TableCell>
+              <TableCell>
+                <Skeleton width={90} height={20} />
+              </TableCell>
+              <TableCell>
+                <Skeleton width={80} height={20} />
+              </TableCell>
+              <TableCell>
+                <Skeleton width={80} height={20} />
+              </TableCell>
+              <TableCell>
+                <Skeleton width={80} height={20} />
+              </TableCell>
+              <TableCell>
+                <Skeleton width={60} height={24} borderRadius={8} />
+              </TableCell>
+              <TableCell>
+                <Skeleton width={70} height={20} />
+              </TableCell>
+              <TableCell>
+                <Skeleton width={80} height={20} />
+              </TableCell>
+              <TableCell>
+                <Skeleton width={90} height={16} />
+              </TableCell>
+              <TableCell>
+                <div className="flex space-x-2">
+                  <Skeleton width={40} height={40} borderRadius={6} />
+                  <Skeleton width={40} height={40} borderRadius={6} />
+                  <Skeleton width={40} height={40} borderRadius={6} />
+                </div>
+              </TableCell>
+            </TableRow>
+          ))
+        : orders.map((order: Order) => {
+            const profitLoss = calculateProfitLoss(order);
+            const profitLossClass = getProfitLossClass(profitLoss);
+            const pnl = Math.abs(profitLoss);
+            const readablePnl = readableCurrency(pnl);
+            const orderId = order.id || "";
 
-        return (
-          <TableRow key={order.id}>
-            <TableCell>
-              <Badge
-                style={{
-                  background:
-                    order?.order_details?.orderType === "limit"
-                      ? "black"
-                      : "rgb(139, 92, 246)",
-                }}
-              >
-                {order?.order_details?.orderType?.toUpperCase() || "MARKET"}
-              </Badge>
-            </TableCell>
-            <TableCell>
-              <Badge
-                style={{
-                  background:
-                    order.type === "buy"
-                      ? "rgb(34, 197, 94)"
-                      : "rgb(239, 68, 68)",
-                }}
-              >
-                {order.type.toUpperCase()}
-              </Badge>
-            </TableCell>
-            <TableCell>{order.symbol}</TableCell>
-            <TableCell>{order.quantity?.toFixed(8)}</TableCell>
-            <TableCell>{readableCurrency(order.price || 0)}</TableCell>
-            <TableCell>
-              {readableCurrency(order.order_details?.target || 0)}
-            </TableCell>
-            <TableCell>
-              {readableCurrency(order.order_details?.stopLoss || 0)}
-            </TableCell>
-            <TableCell>
-              <Badge
-                variant={order.status === "open" ? "outline" : "secondary"}
-              >
-                {order.status.toUpperCase()}
-              </Badge>
-            </TableCell>
-            <TableCell>
-              {order.closed_price ? `$${order.closed_price.toFixed(2)}` : "N/A"}
-            </TableCell>
-            <TableCell className={profitLossClass}>{readablePnl}</TableCell>
-            <TableCell>
-              <span className="text-xs text-gray-600 dark:text-gray-400">
-                {order.created_at
-                  ? formatDateTime(order.created_at, { shortFormat: true })
-                  : "N/A"}
-              </span>
-            </TableCell>
-            <TableCell>
-              <div className="flex space-x-2">
-                {order.status === "open" && (
-                  <Button
-                    onClick={() => {
-                      onSquareOff(orderId);
+            return (
+              <TableRow key={order.id}>
+                <TableCell>
+                  <Badge
+                    style={{
+                      background:
+                        order?.order_details?.orderType === "limit"
+                          ? "black"
+                          : "rgb(139, 92, 246)",
                     }}
-                    size="icon"
-                    variant="outline"
-                    className="border-violet-500 text-violet-500 hover:bg-violet-50"
                   >
-                    <X className="h-4 w-4" />
-                  </Button>
-                )}
-                {order.status === "open" && (
-                  <Button
-                    onClick={() => {
-                      handleEditClick(order);
+                    {order?.order_details?.orderType?.toUpperCase() || "MARKET"}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge
+                    style={{
+                      background:
+                        order.type === "buy"
+                          ? "rgb(34, 197, 94)"
+                          : "rgb(239, 68, 68)",
                     }}
-                    size="icon"
-                    variant="outline"
-                    className="border-blue-500 text-blue-500 hover:bg-violet-50"
                   >
-                    <Edit2Icon className="h-4 w-4" />
-                  </Button>
-                )}
-                {order.status === "closed" && (
-                  <Button
-                    onClick={() => handleDeleteClick(orderId)}
-                    size="icon"
-                    variant="outline"
-                    className="border-red-500 text-red-500 hover:bg-violet-50"
+                    {order.type.toUpperCase()}
+                  </Badge>
+                </TableCell>
+                <TableCell>{order.symbol}</TableCell>
+                <TableCell>{order.quantity?.toFixed(8)}</TableCell>
+                <TableCell>{readableCurrency(order.price || 0)}</TableCell>
+                <TableCell>
+                  {readableCurrency(order.order_details?.target || 0)}
+                </TableCell>
+                <TableCell>
+                  {readableCurrency(order.order_details?.stopLoss || 0)}
+                </TableCell>
+                <TableCell>
+                  <Badge
+                    variant={order.status === "open" ? "outline" : "secondary"}
                   >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-            </TableCell>
-          </TableRow>
-        );
-      })}
+                    {order.status.toUpperCase()}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  {order.closed_price
+                    ? `$${order.closed_price.toFixed(2)}`
+                    : "N/A"}
+                </TableCell>
+                <TableCell className={profitLossClass}>{readablePnl}</TableCell>
+                <TableCell>
+                  <span className="text-xs text-gray-600 dark:text-gray-400">
+                    {order.created_at
+                      ? formatDateTime(order.created_at, { shortFormat: true })
+                      : "N/A"}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <div className="flex space-x-2">
+                    {order.status === "open" && (
+                      <Button
+                        onClick={() => {
+                          onSquareOff(orderId);
+                        }}
+                        size="icon"
+                        variant="outline"
+                        className="border-violet-500 text-violet-500 hover:bg-violet-50"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {order.status === "open" && (
+                      <Button
+                        onClick={() => {
+                          handleEditClick(order);
+                        }}
+                        size="icon"
+                        variant="outline"
+                        className="border-blue-500 text-blue-500 hover:bg-violet-50"
+                      >
+                        <Edit2Icon className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {order.status === "closed" && (
+                      <Button
+                        onClick={() => handleDeleteClick(orderId)}
+                        size="icon"
+                        variant="outline"
+                        className="border-red-500 text-red-500 hover:bg-violet-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
+            );
+          })}
     </TableBody>
   </Table>
 );
@@ -399,9 +515,10 @@ export default function OrderTable({
   const [quantity, setQuantity] = useState(0);
   const [stopLoss, setStopLoss] = useState("");
   const [target, setTarget] = useState("");
-  const { setOverallPnl } = usePositions();
   const overallPnl = useOverallPnl();
   const currentPrices = useCurrentPrices();
+  const { setOverallPnl } = usePositions();
+  const { loading } = useOrders();
 
   const calculateProfitLoss = (order: Order) => {
     if (order.status === "pending") return 0;
@@ -566,6 +683,7 @@ export default function OrderTable({
 
           {isCardView
             ? renderCardView({
+                loading,
                 orders,
                 calculateProfitLoss,
                 getProfitLossClass,
@@ -574,6 +692,7 @@ export default function OrderTable({
                 handleEditClick,
               })
             : renderTableView({
+                loading,
                 orders,
                 calculateProfitLoss,
                 getProfitLossClass,
