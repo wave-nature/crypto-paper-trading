@@ -125,8 +125,10 @@ export default function TradingSummary() {
             <h3 className="text-sm font-medium text-muted-foreground">
               Overall P/L
             </h3>
-            <p className="text-2xl font-bold text-red-500">
-              {readableCurrency(summary?.overallPnl || 0)}
+            <p
+              className={`text-2xl font-bold ${summary?.overallPnl >= 0 ? "text-green-500" : "text-red-500"}`}
+            >
+              {readableCurrency(Math.abs(summary?.overallPnl || 0))}
             </p>
           </div>
         </div>

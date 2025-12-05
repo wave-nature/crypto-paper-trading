@@ -129,7 +129,7 @@ export async function GET(request: NextRequest) {
       lossTrades,
       mostProfitableTrade,
       mostLossTrade,
-      overallPnl: Math.abs(overallPnl),
+      overallPnl,
     };
 
     return NextResponse.json({ data });
