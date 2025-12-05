@@ -25,6 +25,7 @@ import {
 } from "@/constants/toastMessages";
 import { DASHBOARD } from "@/constants/navigation";
 import useAuthStore from "@/store/useAuthStore";
+import Spinner from "@/components/ui/Spinner";
 
 export function SignupForm() {
   const [name, setName] = useState("");
@@ -185,7 +186,7 @@ export function SignupForm() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors z-10"
                 disabled={isLoading}
               >
                 {showPassword ? (
@@ -216,7 +217,7 @@ export function SignupForm() {
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors z-10"
                 disabled={isLoading}
               >
                 {showConfirmPassword ? (
@@ -233,7 +234,7 @@ export function SignupForm() {
             className="w-full bg-violet-500 hover:bg-violet-600 text-white font-medium"
             disabled={isLoading}
           >
-            {isLoading ? "Creating account..." : "Create account"}
+            {isLoading ? <Spinner className="border-white" /> : "Create account"}
           </Button>
         </form>
 
