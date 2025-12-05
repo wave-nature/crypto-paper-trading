@@ -111,7 +111,7 @@ export function SignupForm() {
   };
 
   return (
-    <Card className="w-full max-w-md shadow-2xl border-violet-200 dark:border-violet-800/50">
+    <Card className="w-full max-w-md flex flex-col justify-center">
       <CardHeader className="space-y-3 text-center">
         <div className="flex justify-center mb-2">
           <div className="p-3 bg-violet-500 rounded-xl">
