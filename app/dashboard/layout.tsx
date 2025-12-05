@@ -9,6 +9,7 @@ import { createSupabaseBrowserClient } from "@/utils/supabase/client";
 import Navbar from "../components/Navbar";
 import useAccountHook from "@/hooks/useAccount";
 import { LucideGamepad2 } from "lucide-react";
+import useSummaryHook from "@/hooks/useSummary";
 
 export default function AuthLayout({
   children,
@@ -33,7 +34,7 @@ export default function AuthLayout({
   async function getUser() {
     try {
       const { data, error } = await supabase.auth.getUser();
-      
+
       if (error || !data) {
         toast.error(error?.message || "User not found");
         await new Promise((resolve) => setTimeout(resolve, 1000));

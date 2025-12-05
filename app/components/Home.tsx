@@ -30,10 +30,6 @@ export default function Home() {
     "",
   );
   const [fullChart, setFullChart] = useState(false);
-  const [profitableTradesCount, setProfitableTradesCount] = useState(0);
-  const [lossTradesCount, setLossTradesCount] = useState(0);
-  const [mostProfitableTrade, setMostProfitableTrade] = useState(0);
-  const [biggestLossTrade, setBiggestLossTrade] = useState(0);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -205,30 +201,6 @@ export default function Home() {
     [orders, balance, setOrders, updateOrder, fetchOrders, currentPage],
   );
 
-  const updateTradingSummary = useCallback(() => {
-    let profitable = 0;
-    let loss = 0;
-    let maxProfit = 0;
-    let maxLoss = 0;
-
-    orders.forEach((order) => {
-      if (order.status === "closed" && order.profit !== undefined) {
-        if (order.profit > 0) {
-          profitable++;
-          maxProfit = Math.max(maxProfit, order.profit);
-        } else if (order.profit < 0) {
-          loss++;
-          maxLoss = Math.min(maxLoss, order.profit);
-        }
-      }
-    });
-
-    setProfitableTradesCount(profitable);
-    setLossTradesCount(loss);
-    setMostProfitableTrade(maxProfit);
-    setBiggestLossTrade(Math.abs(maxLoss));
-  }, [orders]);
-
   // handle limit order execution
   // useEffect(() => {
   //   if (!currentPrice) return;
@@ -279,9 +251,7 @@ export default function Home() {
   //   }
   // }, [currentPrice, orders, balance, setBalance, setOrders]);
 
-  useEffect(() => {
-    updateTradingSummary();
-  }, [orders, updateTradingSummary]);
+
 
   // HANDLE IT IN BETTER WAY
   const handleSquareOff = useCallback(
@@ -430,13 +400,7 @@ export default function Home() {
         </div>
         <div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-6">
-            <TradingSummary
-              profitableTradesCount={profitableTradesCount}
-              lossTradesCount={lossTradesCount}
-              totalTradesCount={orders.length}
-              mostProfitableTrade={mostProfitableTrade}
-              biggestLossTrade={biggestLossTrade}
-            />
+            <TradingSummary />
             <Portfolio balance={balance} />
           </div>
           <OrderTable
