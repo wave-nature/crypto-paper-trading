@@ -98,7 +98,7 @@ export function LoginForm() {
   };
 
   return (
-    <Card className="w-full max-w-md shadow-2xl border-violet-200 dark:border-violet-800/50">
+    <Card className="w-full max-w-md shadow-2xl border-violet-200 dark:border-violet-800/50 flex flex-col justify-center">
       <CardHeader className="space-y-3 text-center">
         <div className="flex justify-center mb-2">
           <div className="p-3 bg-violet-500 rounded-xl">
@@ -141,7 +141,7 @@ export function LoginForm() {
               </Label>
               <a
                 href="/auth/forgot-password"
-                className="text-sm text-violet-500 hover:text-violet-600 dark:text-violet-400 dark:hover:text-violet-300 font-medium transition-colors"
+                className="text-sm text-violet-500 hover:text-violet-600 dark:text-violet-400 dark:hover:text-violet-300 font-medium transition-colors z-10 relative"
               >
                 Forgot password?
               </a>
