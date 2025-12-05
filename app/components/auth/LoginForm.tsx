@@ -25,6 +25,7 @@ import {
   LOGGED_IN_SUCCESSFULLY,
 } from "@/constants/toastMessages";
 import useAuthStore from "@/store/useAuthStore";
+import Spinner from "@/components/ui/Spinner";
 
 export function LoginForm() {
   const [email, setEmail] = useState("");
@@ -161,7 +162,7 @@ export function LoginForm() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                className="absolute z-10 right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                 disabled={isLoading}
               >
                 {showPassword ? (
@@ -178,7 +179,7 @@ export function LoginForm() {
             className="w-full bg-violet-500 hover:bg-violet-600 text-white font-medium"
             disabled={isLoading}
           >
-            {isLoading ? "Signing in..." : "Sign in"}
+            {isLoading ? <Spinner className="border-white" /> : "Sign in"}
           </Button>
         </form>
 
