@@ -74,7 +74,7 @@ export function LoginForm() {
           username: account.username,
         });
         toast.success(LOGGED_IN_SUCCESSFULLY);
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 200));
         router.push(DASHBOARD);
       } else {
         toast.error(error!.message);

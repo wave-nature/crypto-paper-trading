@@ -251,8 +251,6 @@ export default function Home() {
   //   }
   // }, [currentPrice, orders, balance, setBalance, setOrders]);
 
-
-
   // HANDLE IT IN BETTER WAY
   const handleSquareOff = useCallback(
     (orderId: string) => {
@@ -353,6 +351,13 @@ export default function Home() {
     [orders, setOrders, deleteOrder, fetchOrders, currentPage],
   );
 
+  const handleUpdateNotes = useCallback(
+    async (orderId: string, notes: string) => {
+      await updateOrder({ id: orderId, notes }, () => fetchOrders(currentPage));
+    },
+    [orders, setOrders, updateOrder, fetchOrders, currentPage],
+  );
+
   return (
     <>
       <div className="mx-auto px-4 py-4">
@@ -409,6 +414,7 @@ export default function Home() {
             onSquareOff={handleSquareOff}
             onDeleteOrder={handleDeleteOrder}
             onUpdateTrade={handleUpdateTrade}
+            onUpdateNotes={handleUpdateNotes}
             pagination={pagination}
             onPageChange={handlePageChange}
             onOrderTabChange={setOrderTab}
