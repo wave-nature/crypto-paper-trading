@@ -23,6 +23,7 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  FileText,
 } from "lucide-react";
 import { Order, OrderTabs, Symbols, SymbolsUpperCase } from "@/types";
 import { useCurrentPrices, useOverallPnl } from "@/store/usePositions";
@@ -33,6 +34,12 @@ import usePositions from "@/store/usePositions";
 import useOrders from "@/store/useOrders";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
+import dynamic from "next/dynamic";
+import { set } from "react-hook-form";
+import Spinner from "@/components/ui/Spinner";
+import toast from "react-hot-toast";
+
+const Editor = dynamic(() => import("react-simple-wysiwyg"), { ssr: false });
 
 interface OrderTableProps {
   orderTab: OrderTabs;
@@ -54,6 +61,7 @@ interface OrderTableProps {
   };
   onPageChange: (page: number) => void;
   onOrderTabChange: (tabId: OrderTabs) => void;
+  onUpdateNotes: (orderId: string, notes: string) => void;
 }
 
 const tabs: { id: OrderTabs; label: string }[] = [
@@ -74,6 +82,7 @@ interface OrderViewProps {
   onSquareOff: (orderId: string) => void;
   handleDeleteClick: (orderId: string) => void;
   handleEditClick: (order: Order) => void;
+  handleNotesClick: (order: Order) => void;
 }
 
 const renderCardView = ({
@@ -84,6 +93,7 @@ const renderCardView = ({
   onSquareOff,
   handleDeleteClick,
   handleEditClick,
+  handleNotesClick,
 }: OrderViewProps) => (
   <div className="space-y-4">
     {loading
@@ -303,6 +313,15 @@ const renderCardView = ({
                     </Button>
                   )}
                   <Button
+                    onClick={() => handleNotesClick(order)}
+                    size="sm"
+                    variant="outline"
+                    className="border-amber-500 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30 flex items-center gap-2"
+                  >
+                    <FileText className="h-4 w-4" />
+                    <span>Notes</span>
+                  </Button>
+                  <Button
                     onClick={() => handleDeleteClick(order?.id || "")}
                     size="sm"
                     variant="outline"
@@ -327,6 +346,7 @@ const renderTableView = ({
   onSquareOff,
   handleDeleteClick,
   handleEditClick,
+  handleNotesClick,
 }: OrderViewProps) => (
   <Table>
     <TableHeader>
@@ -480,6 +500,15 @@ const renderTableView = ({
                         <Edit2Icon className="h-4 w-4" />
                       </Button>
                     )}
+                    <Button
+                      onClick={() => handleNotesClick(order)}
+                      size="icon"
+                      variant="outline"
+                      className="border-amber-500 text-amber-600 hover:bg-amber-50"
+                      title="Add Notes"
+                    >
+                      <FileText className="h-4 w-4" />
+                    </Button>
                     {order.status === "closed" && (
                       <Button
                         onClick={() => handleDeleteClick(orderId)}
@@ -508,6 +537,7 @@ export default function OrderTable({
   pagination,
   onPageChange,
   onOrderTabChange,
+  onUpdateNotes,
 }: OrderTableProps) {
   const [isCardView, setIsCardView] = useState(false);
   const [deleteOrderId, setDeleteOrderId] = useState<string | null>(null);
@@ -515,6 +545,9 @@ export default function OrderTable({
   const [quantity, setQuantity] = useState(0);
   const [stopLoss, setStopLoss] = useState("");
   const [target, setTarget] = useState("");
+  const [notesOrder, setNotesOrder] = useState<Order | null>(null);
+  const [saveNotesLoader, setSaveNotesLoader] = useState(false);
+  const [notes, setNotes] = useState("");
   const overallPnl = useOverallPnl();
   const currentPrices = useCurrentPrices();
   const { setOverallPnl } = usePositions();
@@ -618,6 +651,32 @@ export default function OrderTable({
     setOrder(null);
   };
 
+  const handleNotesClick = (order: Order) => {
+    setNotesOrder(order);
+    setNotes(""); // Reset notes or load existing notes here
+  };
+
+  const handleSaveNotes = async () => {
+    try {
+      if (!notes) return toast.error("Notes cannot be empty");
+      if (notesOrder && notesOrder.id) {
+        setSaveNotesLoader(true);
+        await onUpdateNotes(notesOrder.id, notes);
+        setNotesOrder(null);
+        setNotes("");
+      }
+    } catch (err) {
+      console.log("err", err);
+    } finally {
+      setSaveNotesLoader(false);
+    }
+  };
+
+  const handleCancelNotes = () => {
+    setNotesOrder(null);
+    setNotes("");
+  };
+
   const currentPrice =
     (order &&
       order.symbol &&
@@ -690,6 +749,7 @@ export default function OrderTable({
                 onSquareOff,
                 handleDeleteClick,
                 handleEditClick,
+                handleNotesClick,
               })
             : renderTableView({
                 loading,
@@ -699,6 +759,7 @@ export default function OrderTable({
                 onSquareOff,
                 handleDeleteClick,
                 handleEditClick,
+                handleNotesClick,
               })}
 
           {orders.length === 0 && (
@@ -980,6 +1041,113 @@ export default function OrderTable({
                 </div>
               </div>
             </CardContent>
+          </div>
+        </Modal>
+      )}
+
+      {/* Notes modal */}
+      {notesOrder && (
+        <Modal className="max-w-[70vw]">
+          <div className="w-full">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-violet-100 dark:bg-violet-900/30 rounded-lg">
+                <FileText className="h-6 w-6 text-violet-600 dark:text-violet-400" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-violet-400 bg-clip-text text-transparent">
+                  Trade Notes
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {notesOrder.symbol} - {notesOrder.type.toUpperCase()} Order
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-violet-50 dark:bg-violet-950/20 p-4 rounded-lg mb-4">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+                <div>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    Entry Price
+                  </p>
+                  <p className="font-semibold text-violet-700 dark:text-violet-400">
+                    {readableCurrency(notesOrder.price || 0)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-500 dark:text-gray-400">Amount</p>
+                  <p className="font-semibold text-violet-700 dark:text-violet-400">
+                    {notesOrder.quantity?.toFixed(8)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-500 dark:text-gray-400">Status</p>
+                  <Badge
+                    variant={
+                      notesOrder.status === "open" ? "outline" : "secondary"
+                    }
+                    className="mt-1"
+                  >
+                    {notesOrder.status.toUpperCase()}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    Profit/Loss
+                  </p>
+                  <p
+                    className={`text-${(notesOrder?.profit || 0) >= 0 ? "green" : "red"}-500`}
+                  >
+                    {readableCurrency(notesOrder.profit || 0)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-500 dark:text-gray-400">Created</p>
+                  <p className="font-semibold text-violet-700 dark:text-violet-400 text-xs">
+                    {notesOrder.created_at
+                      ? formatDateTime(notesOrder.created_at, {
+                          shortFormat: true,
+                        })
+                      : "N/A"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Notes & Analysis
+                </label>
+                <div className="border-2 border-violet-200 dark:border-violet-800 rounded-lg overflow-hidden focus-within:border-violet-400 dark:focus-within:border-violet-600 transition-colors [&_.rsw-editor]:min-h-[400px] [&_.rsw-editor]:max-h-[500px] [&_.rsw-editor]:overflow-auto [&_.rsw-editor]:p-4 [&_.rsw-editor]:text-gray-900 [&_.rsw-editor]:dark:text-gray-100 [&_.rsw-toolbar]:bg-violet-50 [&_.rsw-toolbar]:dark:bg-violet-950/30 [&_.rsw-toolbar]:border-b [&_.rsw-toolbar]:border-violet-200 [&_.rsw-toolbar]:dark:border-violet-800">
+                  <Editor
+                    value={notes || notesOrder.notes}
+                    onChange={(e: any) => setNotes(e.target.value)}
+                  />
+                </div>
+                <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                  Document your trade analysis, strategy, emotions, and lessons
+                  learned
+                </p>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <Button
+                  onClick={handleSaveNotes}
+                  className="flex-1 bg-violet-500 hover:bg-violet-600 text-white font-semibold shadow-md hover:shadow-lg transition-all"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Save Notes{" "}
+                  {saveNotesLoader && <Spinner className="border-t-white" />}
+                </Button>
+                <Button
+                  onClick={handleCancelNotes}
+                  variant="outline"
+                  className="flex-1 border-2 border-violet-300 text-violet-600 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-400 dark:hover:bg-violet-950/30 font-semibold"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
           </div>
         </Modal>
       )}

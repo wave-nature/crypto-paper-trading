@@ -87,7 +87,7 @@ export function SignupForm() {
         });
 
         toast.success(created("User"));
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 200));
         router.push(DASHBOARD);
       } else {
         toast.error(error!.message || SOMETHING_WENT_WRONG);
@@ -234,7 +234,11 @@ export function SignupForm() {
             className="w-full bg-violet-500 hover:bg-violet-600 text-white font-medium"
             disabled={isLoading}
           >
-            {isLoading ? <Spinner className="border-white" /> : "Create account"}
+            {isLoading ? (
+              <Spinner className="border-white" />
+            ) : (
+              "Create account"
+            )}
           </Button>
         </form>
 

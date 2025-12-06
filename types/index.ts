@@ -19,8 +19,14 @@ export interface Order {
   closed_price?: number;
   profit?: number;
   user_id?: string;
+  notes?: string;
   updated_at?: string;
   created_at?: string;
+}
+
+export interface OrderNotes {
+  id: string;
+  notes?: string;
 }
 
 export type OpenOrders = Symbols[];

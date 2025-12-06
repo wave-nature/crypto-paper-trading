@@ -1,6 +1,6 @@
 "use client";
 
-import { Order, OrderTabs } from "@/types";
+import { Order, OrderNotes, OrderTabs } from "@/types";
 import {
   ORDER_DELETED_SUCCESSFULLY,
   ORDER_NOT_DELETED,
@@ -33,12 +33,12 @@ const useOrdersHook = () => {
     }
   }
 
-  async function updateOrder(order: Order, onSuccess?: () => void) {
+  async function updateOrder(order: Order | OrderNotes, onSuccess?: () => void) {
     try {
       await axios.put("/api/orders", { order });
 
       toast.success(
-        order.status === "closed"
+        "status" in order && order.status === "closed"
           ? ORDER_SQUARED_OFF
           : ORDER_UPDATED_SUCCESSFULLY,
       );
