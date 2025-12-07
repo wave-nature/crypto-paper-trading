@@ -31,10 +31,8 @@ export function SignupForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const supabase = createSupabaseBrowserClient();
   const router = useRouter();
   const { setUser } = useAuthStore();
@@ -44,9 +42,8 @@ export function SignupForm() {
       e.preventDefault();
       setIsLoading(true);
 
-      if (!email || !name || !password || !confirmPassword)
+      if (!email || !name || !password)
         return toast.error(ALL_FIELDS_ARE_REQUIRED);
-      if (password !== confirmPassword) return toast.error(PASSWORD_MISMATCH);
 
       const username = email.split("@")[0];
       const { error, data } = await supabase.auth.signUp({
@@ -190,37 +187,6 @@ export function SignupForm() {
                 disabled={isLoading}
               >
                 {showPassword ? (
-                  <EyeOff className="w-4 h-4" />
-                ) : (
-                  <Eye className="w-4 h-4" />
-                )}
-              </button>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="confirm-password" className="text-sm font-medium">
-              Confirm Password
-            </Label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                id="confirm-password"
-                type={showConfirmPassword ? "text" : "password"}
-                placeholder="••••••••"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                className="pl-10 pr-10"
-                disabled={isLoading}
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors z-10"
-                disabled={isLoading}
-              >
-                {showConfirmPassword ? (
                   <EyeOff className="w-4 h-4" />
                 ) : (
                   <Eye className="w-4 h-4" />
