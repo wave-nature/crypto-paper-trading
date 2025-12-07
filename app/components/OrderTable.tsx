@@ -653,7 +653,7 @@ export default function OrderTable({
 
   const handleNotesClick = (order: Order) => {
     setNotesOrder(order);
-    setNotes(""); // Reset notes or load existing notes here
+    setNotes(order.notes || ""); 
   };
 
   const handleSaveNotes = async () => {
@@ -1045,25 +1045,29 @@ export default function OrderTable({
         </Modal>
       )}
 
-      {/* Notes modal */}
+      {/* Notes modal - Horizontal Split View */}
       {notesOrder && (
-        <Modal className="max-w-[70vw]">
-          <div className="w-full">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-violet-100 dark:bg-violet-900/30 rounded-lg">
-                <FileText className="h-6 w-6 text-violet-600 dark:text-violet-400" />
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-violet-400 bg-clip-text text-transparent">
-                  Trade Notes
-                </h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {notesOrder.symbol} - {notesOrder.type.toUpperCase()} Order
-                </p>
+        <Modal className="max-w-[80vw]">
+          <div className="w-full max-w-7xl">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-violet-100 dark:bg-violet-900/30 rounded-lg">
+                  <FileText className="h-6 w-6 text-violet-600 dark:text-violet-400" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-violet-400 bg-clip-text text-transparent">
+                    Trade Notes & Analysis
+                  </h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {notesOrder.symbol} - {notesOrder.type.toUpperCase()} Order
+                  </p>
+                </div>
               </div>
             </div>
 
-            <div className="bg-violet-50 dark:bg-violet-950/20 p-4 rounded-lg mb-4">
+            {/* Order Summary */}
+            <div className="bg-gradient-to-r from-violet-50 to-violet-50 dark:from-violet-950/20 dark:to-violet-950/20 p-4 rounded-lg mb-6 border border-violet-200 dark:border-violet-800">
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
                 <div>
                   <p className="text-gray-500 dark:text-gray-400">
@@ -1095,9 +1099,9 @@ export default function OrderTable({
                     Profit/Loss
                   </p>
                   <p
-                    className={`text-${(notesOrder?.profit || 0) >= 0 ? "green" : "red"}-500`}
+                    className={`font-semibold ${(notesOrder?.profit || 0) >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}
                   >
-                    {readableCurrency(notesOrder.profit || 0)}
+                    {readableCurrency(Math.abs(notesOrder.profit || 0))}
                   </p>
                 </div>
                 <div>
@@ -1113,40 +1117,87 @@ export default function OrderTable({
               </div>
             </div>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+            {/* Horizontal Split: Screenshot & Notes */}
+            <div
+              className={`grid grid-cols-1 md:grid-cols-${notesOrder.screenshot_url ? 2 : 1} gap-6`}
+            >
+              {/* Left: Chart Screenshot */}
+              {notesOrder.screenshot_url && (
+                <div className="space-y-3">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    Chart Snapshot
+                  </label>
+                  <div className="border-2 border-violet-200 dark:border-violet-800 rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-900 h-[400px] flex items-center justify-center">
+                    {notesOrder.screenshot_url ? (
+                      <img
+                        src={notesOrder.screenshot_url}
+                        alt="Trade Chart Screenshot"
+                        className="w-full h-full object-contain"
+                      />
+                    ) : (
+                      <div className="text-center p-8">
+                        <div className="mb-4 flex justify-center">
+                          <div className="p-4 bg-violet-100 dark:bg-violet-900/30 rounded-full">
+                            <FileText className="h-12 w-12 text-violet-400" />
+                          </div>
+                        </div>
+                        <p className="text-gray-500 dark:text-gray-400 font-medium">
+                          No chart screenshot available
+                        </p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+                          Screenshots are captured when you place orders
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Right: Notes Editor */}
+              <div className="space-y-3">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
                   Notes & Analysis
                 </label>
-                <div className="border-2 border-violet-200 dark:border-violet-800 rounded-lg overflow-hidden focus-within:border-violet-400 dark:focus-within:border-violet-600 transition-colors [&_.rsw-editor]:min-h-[400px] [&_.rsw-editor]:max-h-[500px] [&_.rsw-editor]:overflow-auto [&_.rsw-editor]:p-4 [&_.rsw-editor]:text-gray-900 [&_.rsw-editor]:dark:text-gray-100 [&_.rsw-toolbar]:bg-violet-50 [&_.rsw-toolbar]:dark:bg-violet-950/30 [&_.rsw-toolbar]:border-b [&_.rsw-toolbar]:border-violet-200 [&_.rsw-toolbar]:dark:border-violet-800">
+                <div className="border-2 border-violet-200 dark:border-violet-800 rounded-lg overflow-hidden focus-within:border-amber-400 dark:focus-within:border-amber-600 transition-colors [&_.rsw-editor]:min-h-[400px] [&_.rsw-editor]:max-h-[400px] [&_.rsw-editor]:overflow-auto [&_.rsw-editor]:p-4 [&_.rsw-editor]:text-gray-900 [&_.rsw-editor]:dark:text-gray-100 [&_.rsw-toolbar]:bg-violet-50 [&_.rsw-toolbar]:dark:bg-violet-950/30 [&_.rsw-toolbar]:border-b [&_.rsw-toolbar]:border-violet-200 [&_.rsw-toolbar]:dark:border-violet-800">
                   <Editor
                     value={notes || notesOrder.notes}
                     onChange={(e: any) => setNotes(e.target.value)}
                   />
                 </div>
-                <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                  Document your trade analysis, strategy, emotions, and lessons
-                  learned
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  💡 Document your trade setup, technical analysis, emotions,
+                  and key learnings
                 </p>
               </div>
+            </div>
 
-              <div className="flex gap-3 pt-4">
-                <Button
-                  onClick={handleSaveNotes}
-                  className="flex-1 bg-violet-500 hover:bg-violet-600 text-white font-semibold shadow-md hover:shadow-lg transition-all"
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  Save Notes{" "}
-                  {saveNotesLoader && <Spinner className="border-t-white" />}
-                </Button>
-                <Button
-                  onClick={handleCancelNotes}
-                  variant="outline"
-                  className="flex-1 border-2 border-violet-300 text-violet-600 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-400 dark:hover:bg-violet-950/30 font-semibold"
-                >
-                  Cancel
-                </Button>
-              </div>
+            {/* Action Buttons */}
+            <div className="flex gap-3 pt-6 mt-6 border-t border-violet-200 dark:border-violet-800">
+              <Button
+                onClick={handleSaveNotes}
+                disabled={saveNotesLoader}
+                className="flex-1 bg-gradient-to-r from-violet-500 to-violet-600 hover:from-violet-600 hover:to-violet-700 text-white font-semibold shadow-md hover:shadow-lg transition-all disabled:opacity-50"
+              >
+                {saveNotesLoader ? (
+                  <>
+                    <Spinner size="sm" color="border-white" className="mr-2" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <FileText className="h-4 w-4 mr-2" />
+                    Save Notes
+                  </>
+                )}
+              </Button>
+              <Button
+                onClick={handleCancelNotes}
+                disabled={saveNotesLoader}
+                variant="outline"
+                className="flex-1 border-2 border-violet-300 text-violet-600 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-400 dark:hover:bg-violet-950/30 font-semibold disabled:opacity-50"
+              >
+                Cancel
+              </Button>
             </div>
           </div>
         </Modal>

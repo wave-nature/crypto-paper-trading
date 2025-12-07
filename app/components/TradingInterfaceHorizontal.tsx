@@ -1,14 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import useStore, { useCurrentPrices } from "@/store/usePositions";
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+import { X, Camera } from "lucide-react";
 import { Order, Symbols, SymbolsUpperCase } from "@/types";
 import { readableCurrency } from "@/utils/helpers";
 import toast from "react-hot-toast";
+import useSettings from "@/store/useSettings";
+import { Switch } from "@/components/ui/switch";
 
 interface TradingInterfaceProps {
   onTrade: (
@@ -25,6 +26,7 @@ interface TradingInterfaceProps {
   selectedCrypto: SymbolsUpperCase | "";
   onCryptoChange: (crypto: SymbolsUpperCase | "") => void;
   onSquareOff: (orderId: string) => void;
+  onScreenshotToggle: (enable: boolean) => void;
   orders: Order[];
   cryptocurrencies: string[];
 }
@@ -36,6 +38,7 @@ export default function TradingInterfaceHorizontal({
   onTrade,
   onCryptoChange,
   onSquareOff,
+  onScreenshotToggle,
 }: TradingInterfaceProps) {
   const [amount, setAmount] = useState("");
   const [orderType, setOrderType] = useState<"market" | "limit">("market");
@@ -44,9 +47,22 @@ export default function TradingInterfaceHorizontal({
   const [target, setTarget] = useState("");
   const { selectedCryptoPnl } = useStore();
   const currentPrices = useCurrentPrices();
+  const { settings, setSettings } = useSettings();
   const currentPrice = selectedCrypto
     ? currentPrices[selectedCrypto.toLowerCase() as Symbols]
     : 0;
+
+  // Handle screenshot toggle
+  const handleScreenshotToggle = async (checked: boolean) => {
+    setSettings({ enableScreenshot: checked });
+
+    try {
+      onScreenshotToggle(checked);
+    } catch (error) {
+      // Revert the toggle on error
+      setSettings({ enableScreenshot: checked });
+    }
+  };
 
   const handleTrade = (type: "buy" | "sell") => {
     if (!selectedCrypto) {
@@ -150,7 +166,7 @@ export default function TradingInterfaceHorizontal({
               type="number"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="w-full p-1 border border-violet-200 rounded focus:outline-none focus:ring-2 focus:ring-violet-500 h-8 placeholder:text-sm"
+              className="w-[85%] p-1 border border-violet-200 rounded focus:outline-none focus:ring-2 focus:ring-violet-500 h-8 placeholder:text-sm"
               placeholder="Quantity"
               step="0.0001"
               min="0"
@@ -163,7 +179,7 @@ export default function TradingInterfaceHorizontal({
                   type="number"
                   value={limitPrice}
                   onChange={(e) => setLimitPrice(e.target.value)}
-                  className="w-full p-1 border border-violet-200 rounded focus:outline-none focus:ring-2 focus:ring-violet-500 h-8 placeholder:text-sm"
+                  className="w-[85%] p-1 border border-violet-200 rounded focus:outline-none focus:ring-2 focus:ring-violet-500 h-8 placeholder:text-sm"
                   placeholder="Limit Price ($)"
                   step="0.01"
                   min="0"
@@ -175,7 +191,7 @@ export default function TradingInterfaceHorizontal({
                 type="number"
                 value={stopLoss}
                 onChange={(e) => setStopLoss(e.target.value)}
-                className="w-full p-1 border border-violet-200 rounded focus:outline-none focus:ring-2 focus:ring-violet-500 h-8 placeholder:text-sm"
+                className="w-[85%] p-1 border border-violet-200 rounded focus:outline-none focus:ring-2 focus:ring-violet-500 h-8 placeholder:text-sm"
                 placeholder="Stop Loss (optional)"
                 step="0.01"
                 min="0"
@@ -186,10 +202,18 @@ export default function TradingInterfaceHorizontal({
                 type="number"
                 value={target}
                 onChange={(e) => setTarget(e.target.value)}
-                className="w-full p-1 border border-violet-200 rounded focus:outline-none focus:ring-2 focus:ring-violet-500 h-8 placeholder:text-sm"
+                className="w-[85%] p-1 border border-violet-200 rounded focus:outline-none focus:ring-2 focus:ring-violet-500 h-8 placeholder:text-sm"
                 placeholder="Target (optional)"
                 step="0.01"
                 min="0"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Camera className="h-6 w-6" />
+              <Switch
+                checked={settings.enableScreenshot}
+                onCheckedChange={handleScreenshotToggle}
+                className="data-[state=checked]:bg-amber-500 h-4 w-10"
               />
             </div>
           </>

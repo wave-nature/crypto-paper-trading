@@ -20,6 +20,7 @@ export interface Order {
   profit?: number;
   user_id?: string;
   notes?: string;
+  screenshot_url?: string | null;
   updated_at?: string;
   created_at?: string;
 }
@@ -30,3 +31,9 @@ export interface OrderNotes {
 }
 
 export type OpenOrders = Symbols[];
+
+export interface Settings {
+  id?: string;
+  user_id?: string;
+  enable_screenshot?: boolean;
+}

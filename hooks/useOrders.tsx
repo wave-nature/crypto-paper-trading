@@ -6,15 +6,11 @@ import {
   ORDER_NOT_DELETED,
   ORDER_NOT_PLACED,
   ORDER_NOT_UPDATED,
-  ORDER_PLACED_SUCCESSFULLY,
-  ORDER_SQUARED_OFF,
-  ORDER_UPDATED_SUCCESSFULLY,
   ORDERS_NOT_FETCHED,
 } from "@/constants/toastMessages";
 import toast from "react-hot-toast";
 import useOrders from "@/store/useOrders";
 import axios from "axios";
-import { set } from "react-hook-form";
 
 const useOrdersHook = () => {
   const { setOrders, setLoading } = useOrders();
@@ -22,8 +18,6 @@ const useOrdersHook = () => {
   async function saveOrder(order: Order, onSuccess?: () => void) {
     try {
       await axios.post("/api/orders", { order });
-
-      toast.success(ORDER_PLACED_SUCCESSFULLY);
       if (onSuccess) {
         onSuccess();
       }
@@ -36,12 +30,6 @@ const useOrdersHook = () => {
   async function updateOrder(order: Order | OrderNotes, onSuccess?: () => void) {
     try {
       await axios.put("/api/orders", { order });
-
-      toast.success(
-        "status" in order && order.status === "closed"
-          ? ORDER_SQUARED_OFF
-          : ORDER_UPDATED_SUCCESSFULLY,
-      );
       if (onSuccess) {
         onSuccess();
       }

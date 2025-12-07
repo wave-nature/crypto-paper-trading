@@ -1,21 +1,25 @@
+import useAuthStore from "@/store/useAuthStore";
+import useSummary from "@/store/useSummary";
 import axios from "axios";
 
 const useSummaryHook = () => {
-  async function getSummary({
-    userId,
-    type,
-  }: {
-    userId: string;
-    type: string;
-  }) {
+  const { user } = useAuthStore();
+  const { setLoader, setSummary } = useSummary();
+  async function getSummary({ type }: { type: string }) {
     try {
+      setLoader(true);
       const response = await axios.get(`/api/trading-summary`, {
-        params: { userId, type },
+        params: { userId: user?.id, type },
       });
-      return { data: response.data.data, error: response.data.error };
+      const payload = { data: response.data.data, error: response.data.error };
+      if (payload.error) {
+        throw new Error(payload.error);
+      }
+      setSummary(payload.data);
     } catch (error) {
       console.error("Error updating account:", error);
-      return { data: null, error: error };
+    } finally {
+      setLoader(false);
     }
   }
 
