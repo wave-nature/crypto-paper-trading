@@ -8,8 +8,8 @@ import { AUTH_LOGIN } from "@/constants/navigation";
 import { createSupabaseBrowserClient } from "@/utils/supabase/client";
 import Navbar from "../components/Navbar";
 import useAccountHook from "@/hooks/useAccount";
-import { LucideGamepad2 } from "lucide-react";
-import useSummaryHook from "@/hooks/useSummary";
+import useSettingsHook from "@/hooks/useSettings";
+import useSettings from "@/store/useSettings";
 
 export default function AuthLayout({
   children,
@@ -19,6 +19,8 @@ export default function AuthLayout({
   const { user, setUser } = useAuthStore();
   const { getAllOrders } = useOrdersHook();
   const { getAccount } = useAccountHook();
+  const { getSettings } = useSettingsHook();
+  const { setSettings } = useSettings();
   const supabase = createSupabaseBrowserClient();
 
   useEffect(() => {
@@ -30,6 +32,22 @@ export default function AuthLayout({
       getAllOrders(user?.id);
     }
   }, []);
+
+  useEffect(() => {
+    if (user?.id) {
+      getSettings(user?.id).then((res) => {
+        const { data, error } = res;
+        if (error) {
+          toast.error(error.message);
+        } else {
+          const payload = {
+            enableScreenshot: Boolean(data.enable_screenshot),
+          };
+          setSettings(payload);
+        }
+      });
+    }
+  }, [user?.id]);
 
   async function getUser() {
     try {

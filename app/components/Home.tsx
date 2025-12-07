@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import TradingViewChart from "./TradingViewChart";
 import TradingInterface from "./TradingInterface";
 import Portfolio from "./Portfolio";
@@ -14,6 +14,26 @@ import toast from "react-hot-toast";
 import useOrdersHook from "@/hooks/useOrders";
 import usePriceFetcher from "@/hooks/usePriceFetcher";
 import { useCurrentPrices } from "@/store/usePositions";
+import { createSupabaseBrowserClient } from "@/utils/supabase/client";
+import useSettingsHook from "@/hooks/useSettings";
+import useSettings from "@/store/useSettings";
+import {
+  ORDER_PLACED_SUCCESSFULLY,
+  ORDER_SQUARED_OFF,
+  ORDER_UPDATED_SUCCESSFULLY,
+} from "@/constants/toastMessages";
+import useSummaryHook from "@/hooks/useSummary";
+// extra pixels to extend screenshot area
+const EXTRA_BOTTOM = 50;
+
+// ImageCapture API TypeScript declarations
+declare global {
+  class ImageCapture {
+    constructor(track: MediaStreamTrack);
+    grabFrame(): Promise<ImageBitmap>;
+    takePhoto(): Promise<Blob>;
+  }
+}
 
 const CRYPTOCURRENCIES: SymbolsUpperCase[] = ["BTC", "ETH", "SOL", "XAUUSD"];
 
@@ -21,6 +41,9 @@ export default function Home() {
   const { user, setBalance } = useAuthStore();
   const { orders, setOrders } = useOrders();
   const { saveOrder, updateOrder, deleteOrder, getAllOrders } = useOrdersHook();
+  const { updateSettings, getSettings } = useSettingsHook();
+  const { getSummary } = useSummaryHook();
+  const { settings } = useSettings();
   const [orderTab, setOrderTab] = useState<OrderTabs>("open");
 
   const currentPrices = useCurrentPrices();
@@ -85,8 +108,129 @@ export default function Home() {
     [fetchOrders],
   );
 
+  // Screenshot capture function
+  const captureScreenshot = useCallback(async (): Promise<string | null> => {
+    try {
+      toast.success("Select 'Entire Screen' for full screenshot", {
+        duration: 3000,
+        position: "top-center",
+      });
+
+      const stream = await navigator.mediaDevices.getDisplayMedia({
+        video: {
+          mediaSource: "screen",
+          frameRate: { ideal: 60 },
+        } as any,
+      });
+
+      const track = stream.getVideoTracks()[0];
+      const imageCapture = new ImageCapture(track);
+
+      // wait for stream to ready
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const bitmap = await imageCapture.grabFrame();
+
+      // stop stream
+      stream.getTracks().forEach((t) => t.stop());
+
+      // Convert to full canvas
+      const fullCanvas = document.createElement("canvas");
+      fullCanvas.width = bitmap.width;
+      fullCanvas.height = bitmap.height;
+      const fullCtx = fullCanvas.getContext("2d")!;
+      fullCtx.drawImage(bitmap, 0, 0);
+      const chartRef = document.getElementById("tradingview_widget");
+      // Now crop the TradingView chart region
+      if (!chartRef) {
+        console.error("Chart ref missing");
+        return null;
+      }
+
+      const rect = chartRef.getBoundingClientRect();
+
+      // Calculate scaling ratio (because bitmap != screen logical size)
+      // Calculate scaling ratio (because bitmap != screen logical size)
+      const scaleX = bitmap.width / window.innerWidth;
+      const scaleY = bitmap.height / window.innerHeight;
+
+      const cropX = rect.left * scaleX;
+      const cropY = rect.top * scaleY;
+      const cropW = rect.width * scaleX;
+      const cropH = (rect.height + EXTRA_BOTTOM) * scaleY;
+
+      // Create cropped canvas
+      const cropCanvas = document.createElement("canvas");
+      cropCanvas.width = cropW;
+      cropCanvas.height = cropH;
+      const cropCtx = cropCanvas.getContext("2d")!;
+
+      cropCtx.drawImage(
+        fullCanvas,
+        cropX,
+        cropY,
+        cropW,
+        cropH,
+        0,
+        0,
+        cropW,
+        cropH,
+      );
+
+      const dataUrl = cropCanvas.toDataURL("image/png", 0.95);
+
+      // Convert base64 to Blob
+      const base64Data = dataUrl.split(",")[1];
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: "image/png" });
+
+      // Upload to Supabase Storage
+      const supabase = createSupabaseBrowserClient();
+      const fileName = `screenshot_${Date.now()}_${Math.random().toString(36).substring(7)}.png`;
+      const filePath = `trades/${user?.id}/${fileName}`;
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("screenshots")
+        .upload(filePath, blob, {
+          contentType: "image/png",
+          cacheControl: "3600",
+          upsert: false,
+        });
+
+      if (uploadError) {
+        console.error("Upload error:", uploadError);
+        toast.error("Failed to upload screenshot");
+        return null;
+      }
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from("screenshots")
+        .getPublicUrl(filePath);
+
+      return urlData.publicUrl;
+    } catch (error) {
+      console.error("Crop capture failed:", error);
+      return null;
+    }
+  }, [user?.id]);
+
+  const handleScreenshotToggle = useCallback(
+    (checked: boolean) => {
+      if (user?.id)
+        updateSettings({ userId: user.id, enableScreenshot: checked }, () =>
+          getSettings(user.id),
+        );
+    },
+    [user?.id],
+  );
+
   const handleTrade = useCallback(
-    (
+    async (
       type: "buy" | "sell",
       quantity: number,
       symbol: SymbolsUpperCase | "",
@@ -99,6 +243,11 @@ export default function Home() {
     ) => {
       const currentPrice = currentPrices[symbol.toLocaleLowerCase() as Symbols];
       if (currentPrice === null) return;
+
+      // Capture screenshot before placing order
+      const screenshotUrl = settings.enableScreenshot
+        ? await captureScreenshot()
+        : null;
 
       if (orderDetails.orderType === "limit") {
         const cost = quantity * orderDetails?.limitPrice!;
@@ -118,6 +267,7 @@ export default function Home() {
           status: "pending",
           order_details: orderDetails,
           user_id: user?.id,
+          screenshot_url: screenshotUrl,
         };
 
         const newOrders = [newOrder, ...orders];
@@ -142,11 +292,13 @@ export default function Home() {
           status: "open",
           order_details: orderDetails,
           user_id: user?.id,
+          screenshot_url: screenshotUrl || undefined,
         };
         const newOrders = [newOrder, ...orders];
         setOrders(newOrders);
         saveOrder(newOrder, () => fetchOrders(currentPage));
       }
+      toast.success(ORDER_PLACED_SUCCESSFULLY);
     },
     [
       orders,
@@ -196,6 +348,7 @@ export default function Home() {
       prevOrders[findOrderIndex] = findOrder;
 
       setOrders(prevOrders);
+      toast.success(ORDER_UPDATED_SUCCESSFULLY);
       updateOrder(updatedOrderDetails, () => fetchOrders(currentPage));
     },
     [orders, balance, setOrders, updateOrder, fetchOrders, currentPage],
@@ -295,7 +448,13 @@ export default function Home() {
       const order = ordersUpdate.find(
         (order) => order.id === orderId && order.status === "closed",
       );
-      if (order) updateOrder(order, () => fetchOrders(currentPage));
+      if (order) {
+        toast.success(ORDER_SQUARED_OFF);
+        updateOrder(order, () => {
+          getSummary({ type: "today" });
+          fetchOrders(currentPage);
+        });
+      }
     },
     [orders, setBalance, setOrders, updateOrder, fetchOrders, currentPage],
   );
@@ -374,6 +533,7 @@ export default function Home() {
                 onCryptoChange={setSelectedCrypto}
                 cryptocurrencies={CRYPTOCURRENCIES}
                 onSquareOff={handleSquareOff}
+                onScreenshotToggle={handleScreenshotToggle}
                 orders={orders}
               />
             </div>
@@ -398,6 +558,7 @@ export default function Home() {
                 onCryptoChange={setSelectedCrypto}
                 cryptocurrencies={CRYPTOCURRENCIES}
                 onSquareOff={handleSquareOff}
+                onScreenshotToggle={handleScreenshotToggle}
                 orders={orders}
               />
             </div>

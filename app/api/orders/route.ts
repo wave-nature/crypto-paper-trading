@@ -163,6 +163,29 @@ export async function PUT(request: NextRequest) {
 
     const supabase = await createSupabaseServerClient();
 
+    // First check if the order exists
+    const { data: existingOrder, error: checkError } = await supabase
+      .from("orders")
+      .select("id")
+      .eq("id", order.id)
+      .maybeSingle();
+
+    if (checkError) {
+      console.error("Error checking order existence:", checkError);
+      return NextResponse.json(
+        { error: "Failed to check order", details: checkError.message },
+        { status: 500 },
+      );
+    }
+
+    if (!existingOrder) {
+      return NextResponse.json(
+        { error: "Order not found", details: `No order with ID: ${order.id}` },
+        { status: 404 },
+      );
+    }
+
+    // Update the order
     const { data, error } = await supabase
       .from("orders")
       .update(order)

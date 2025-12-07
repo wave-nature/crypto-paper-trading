@@ -7,42 +7,25 @@ import useSummaryHook from "@/hooks/useSummary";
 import useAuthStore from "@/store/useAuthStore";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
+import useSummary from "@/store/useSummary";
 
 type TabType = "today" | "overall";
 
 export default function TradingSummary() {
   const [activeTab, setActiveTab] = useState<TabType>("today");
-  const [summary, setSummary] = useState<any>(null);
-  const [loader, setLoader] = useState(false);
+  const { summary, loader } = useSummary();
   const { user } = useAuthStore();
   const { getSummary } = useSummaryHook();
   useEffect(() => {
     if (user?.id) {
-      fetchSummary(activeTab);
+      getSummary({ type: activeTab });
     }
   }, [user?.id]);
 
   function onTabChange(tab: TabType) {
     setActiveTab(tab);
     if (user?.id) {
-      fetchSummary(tab);
-    }
-  }
-
-  async function fetchSummary(tab: string) {
-    if (user?.id) {
-      setLoader(true);
-      const { data, error } = await getSummary({
-        userId: user?.id,
-        type: tab,
-      });
-      if (error) {
-        setLoader(false);
-        console.error(error);
-        return;
-      }
-      setLoader(false);
-      setSummary(data);
+      getSummary({ type: tab });
     }
   }
 

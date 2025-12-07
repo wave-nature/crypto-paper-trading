@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, } from "react";
+import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import useStore, { useCurrentPrices } from "@/store/usePositions";
+import { Switch } from "@/components/ui/switch";
+import { useCurrentPrices } from "@/store/usePositions";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { Order, Symbols, SymbolsUpperCase } from "@/types";
 import { readableCurrency } from "@/utils/helpers";
 import toast from "react-hot-toast";
+import useSettings from "@/store/useSettings";
 
 interface TradingInterfaceProps {
   onTrade: (
@@ -25,6 +27,7 @@ interface TradingInterfaceProps {
   selectedCrypto: SymbolsUpperCase | "";
   onCryptoChange: (crypto: SymbolsUpperCase | "") => void;
   onSquareOff: (orderId: string) => void;
+  onScreenshotToggle: (enable: boolean) => void;
   orders: Order[];
   cryptocurrencies: string[];
 }
@@ -36,6 +39,7 @@ export default function TradingInterface({
   onTrade,
   onCryptoChange,
   onSquareOff,
+  onScreenshotToggle,
 }: TradingInterfaceProps) {
   const [amount, setAmount] = useState("");
   const [orderType, setOrderType] = useState<"market" | "limit">("market");
@@ -43,9 +47,22 @@ export default function TradingInterface({
   const [stopLoss, setStopLoss] = useState("");
   const [target, setTarget] = useState("");
   const currentPrices = useCurrentPrices();
+  const { settings, setSettings } = useSettings();
   const currentPrice = selectedCrypto
     ? currentPrices[selectedCrypto.toLowerCase() as Symbols]
     : 0;
+
+  // Handle screenshot toggle
+  const handleScreenshotToggle = async (checked: boolean) => {
+    setSettings({ enableScreenshot: checked });
+
+    try {
+      onScreenshotToggle(checked);
+    } catch (error) {
+      // Revert the toggle on error
+      setSettings({ enableScreenshot: checked });
+    }
+  };
 
   const handleTrade = (type: "buy" | "sell") => {
     if (!selectedCrypto) {
@@ -97,14 +114,31 @@ export default function TradingInterface({
   }, 0);
 
   // open order
-  const order = orders.find((order) => order.status === "open" && order.symbol === selectedCrypto);
+  const order = orders.find(
+    (order) => order.status === "open" && order.symbol === selectedCrypto,
+  );
 
   return (
     <Card className="h-full border-violet-500/20 bg-gradient-to-br from-violet-50/50 to-white dark:from-violet-950/20 dark:to-background">
-      <CardTitle className="bg-gradient-to-r from-violet-600 to-violet-400 bg-clip-text text-transparent p-4 pb-2">
-        Place Order
-      </CardTitle>
-      <CardContent className="p-4">
+      <div className="p-4 pb-2">
+        <CardTitle className="bg-gradient-to-r from-violet-600 to-violet-400 bg-clip-text text-transparent">
+          Place Order
+        </CardTitle>
+
+        {/* Screenshot Toggle */}
+        <div className="flex items-center gap-2 mt-3 p-2 bg-violet-50 dark:bg-violet-950/30 rounded-lg border border-violet-200 dark:border-violet-800">
+          <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex-1">
+            Enable Screenshot
+          </span>
+          <Switch
+            checked={settings.enableScreenshot}
+            onCheckedChange={handleScreenshotToggle}
+            className="data-[state=checked]:bg-amber-500"
+          />
+        </div>
+      </div>
+
+      <CardContent className="p-4 pt-0">
         <div className="space-y-4">
           <div>
             <label className="block mb-1">Cryptocurrency:</label>
