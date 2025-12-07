@@ -1047,8 +1047,8 @@ export default function OrderTable({
 
       {/* Notes modal - Horizontal Split View */}
       {notesOrder && (
-        <Modal className="max-w-[80vw]">
-          <div className="w-full max-w-7xl">
+        <Modal width="max-w-7xl">
+          <div className="w-full">
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
