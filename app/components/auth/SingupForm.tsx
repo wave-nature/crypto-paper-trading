@@ -208,7 +208,7 @@ export function SignupForm() {
           </Button>
         </form>
 
-        <div className="relative">
+        {/*<div className="relative">
           <div className="absolute inset-0 flex items-center">
             <Separator />
           </div>
@@ -245,7 +245,7 @@ export function SignupForm() {
             />
           </svg>
           Continue with Google
-        </Button>
+        </Button>*/}
       </CardContent>
 
       <CardFooter className="flex justify-center">
