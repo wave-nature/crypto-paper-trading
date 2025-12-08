@@ -20,7 +20,6 @@ import { createSupabaseBrowserClient } from "@/utils/supabase/client";
 import { DASHBOARD } from "@/constants/navigation";
 import {
   ALL_FIELDS_ARE_REQUIRED,
-  created,
   LOADING_LOGIN,
   LOGGED_IN_SUCCESSFULLY,
 } from "@/constants/toastMessages";
@@ -183,7 +182,7 @@ export function LoginForm() {
           </Button>
         </form>
 
-        <div className="relative">
+        {/*<div className="relative">
           <div className="absolute inset-0 flex items-center">
             <Separator />
           </div>
@@ -220,7 +219,7 @@ export function LoginForm() {
             />
           </svg>
           Continue with Google
-        </Button>
+        </Button>*/}
       </CardContent>
 
       <CardFooter className="flex justify-center">
