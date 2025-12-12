@@ -46,6 +46,7 @@ export default function Navbar() {
   const { overallPnl } = usePositions();
 
   const handleAddMoney = () => {
+    return toast.error("This feature exist for paid users");
     const amount = parseFloat(addAmount);
     if (amount && amount > 0) {
       setAddAmount("");
@@ -74,15 +75,12 @@ export default function Navbar() {
         <div className="mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center h-14">
             {/* Left section - Logo */}
-            <Link
-              href={DASHBOARD}
-              className="flex items-center space-x-2 group"
-            >
+            <Link href={"/"} className="flex items-center space-x-2 group">
               <div className="bg-gradient-to-br from-violet-500 to-purple-600 p-2 rounded-lg shadow-md group-hover:shadow-lg transition-shadow">
                 <LineChart className="h-4 w-4 text-white" />
               </div>
               <span className="text-lg font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
-                Paper Trading
+                Paprweight
               </span>
             </Link>
 
