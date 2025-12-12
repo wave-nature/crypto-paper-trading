@@ -1,6 +1,7 @@
 "use client";
 
 import Navbar from "../components/Navbar";
+import ToastContainer from "../components/ToastContainer";
 
 export default function AuthLayout({
   children,
@@ -11,6 +12,7 @@ export default function AuthLayout({
     <>
       <Navbar />
       {children}
+      <ToastContainer />
     </>
   );
 }

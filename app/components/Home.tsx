@@ -17,12 +17,14 @@ import { useCurrentPrices } from "@/store/usePositions";
 import { createSupabaseBrowserClient } from "@/utils/supabase/client";
 import useSettingsHook from "@/hooks/useSettings";
 import useSettings from "@/store/useSettings";
+import CryptoTabs from "./CryptoTabs";
 import {
   ORDER_PLACED_SUCCESSFULLY,
   ORDER_SQUARED_OFF,
   ORDER_UPDATED_SUCCESSFULLY,
 } from "@/constants/toastMessages";
 import useSummaryHook from "@/hooks/useSummary";
+import { CRYPTOCURRENCIES } from "@/constants";
 // extra pixels to extend screenshot area
 const EXTRA_BOTTOM = 50;
 
@@ -35,8 +37,6 @@ declare global {
   }
 }
 
-const CRYPTOCURRENCIES: SymbolsUpperCase[] = ["BTC", "ETH", "SOL", "XAUUSD"];
-
 export default function Home() {
   const { user, setBalance } = useAuthStore();
   const { orders, setOrders } = useOrders();
@@ -45,12 +45,14 @@ export default function Home() {
   const { getSummary } = useSummaryHook();
   const { settings } = useSettings();
   const [orderTab, setOrderTab] = useState<OrderTabs>("open");
+  const [activeTabs, setActiveTabs] =
+    useState<SymbolsUpperCase[]>(CRYPTOCURRENCIES);
 
   const currentPrices = useCurrentPrices();
 
   // Use selective subscriptions to prevent unnecessary re-renders
   const [selectedCrypto, setSelectedCrypto] = useState<SymbolsUpperCase | "">(
-    "",
+    ""
   );
   const [fullChart, setFullChart] = useState(false);
 
@@ -71,14 +73,25 @@ export default function Home() {
   useEffect(() => {
     const crypto = localStorage.getItem("selectedCrypto");
     const openOrder = orders.find((order) => order.status === "open");
+
+    // Ensure the saved crypto is in active tabs
     if (crypto && CRYPTOCURRENCIES.includes(crypto as SymbolsUpperCase)) {
+      if (!activeTabs.includes(crypto as SymbolsUpperCase)) {
+        setActiveTabs((prev) => [...prev, crypto as SymbolsUpperCase]);
+      }
       setSelectedCrypto(crypto as SymbolsUpperCase);
     } else if (openOrder) {
+      if (!activeTabs.includes(openOrder.symbol as SymbolsUpperCase)) {
+        setActiveTabs((prev) => [
+          ...prev,
+          openOrder.symbol as SymbolsUpperCase,
+        ]);
+      }
       setSelectedCrypto(openOrder.symbol);
     } else {
       setSelectedCrypto("BTC");
     }
-  }, [orders]);
+  }, [orders, activeTabs]); // Added activeTabs to dep array logic if needed but keeping minimal to avoid loops
 
   // Fetch orders with pagination
   const fetchOrders = useCallback(
@@ -90,7 +103,7 @@ export default function Home() {
         setCurrentPage(page);
       }
     },
-    [user?.id, getAllOrders, orderTab],
+    [user?.id, getAllOrders, orderTab]
   );
 
   // Initial fetch
@@ -105,7 +118,7 @@ export default function Home() {
     (page: number) => {
       fetchOrders(page);
     },
-    [fetchOrders],
+    [fetchOrders]
   );
 
   // Screenshot capture function
@@ -174,7 +187,7 @@ export default function Home() {
         0,
         0,
         cropW,
-        cropH,
+        cropH
       );
 
       const dataUrl = cropCanvas.toDataURL("image/png", 0.95);
@@ -191,7 +204,9 @@ export default function Home() {
 
       // Upload to Supabase Storage
       const supabase = createSupabaseBrowserClient();
-      const fileName = `screenshot_${Date.now()}_${Math.random().toString(36).substring(7)}.png`;
+      const fileName = `screenshot_${Date.now()}_${Math.random()
+        .toString(36)
+        .substring(7)}.png`;
       const filePath = `trades/${user?.id}/${fileName}`;
 
       const { data: uploadData, error: uploadError } = await supabase.storage
@@ -223,10 +238,10 @@ export default function Home() {
     (checked: boolean) => {
       if (user?.id)
         updateSettings({ userId: user.id, enableScreenshot: checked }, () =>
-          getSettings(user.id),
+          getSettings(user.id)
         );
     },
-    [user?.id],
+    [user?.id]
   );
 
   const handleTrade = useCallback(
@@ -239,7 +254,7 @@ export default function Home() {
         limitPrice?: number;
         stopLoss?: number;
         target?: number;
-      },
+      }
     ) => {
       const currentPrice = currentPrices[symbol.toLocaleLowerCase() as Symbols];
       if (currentPrice === null) return;
@@ -310,7 +325,7 @@ export default function Home() {
       saveOrder,
       fetchOrders,
       currentPage,
-    ],
+    ]
   );
 
   const handleUpdateTrade = useCallback(
@@ -351,7 +366,7 @@ export default function Home() {
       toast.success(ORDER_UPDATED_SUCCESSFULLY);
       updateOrder(updatedOrderDetails, () => fetchOrders(currentPage));
     },
-    [orders, balance, setOrders, updateOrder, fetchOrders, currentPage],
+    [orders, balance, setOrders, updateOrder, fetchOrders, currentPage]
   );
 
   // handle limit order execution
@@ -430,7 +445,7 @@ export default function Home() {
       // calculate total balance after square off
       const latestClosedOrder = ordersUpdate.sort(
         (a, b) =>
-          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
       )[0];
       let totalBalance = 0;
       if (
@@ -446,7 +461,7 @@ export default function Home() {
 
       // update order in database
       const order = ordersUpdate.find(
-        (order) => order.id === orderId && order.status === "closed",
+        (order) => order.id === orderId && order.status === "closed"
       );
       if (order) {
         toast.success(ORDER_SQUARED_OFF);
@@ -456,7 +471,7 @@ export default function Home() {
         });
       }
     },
-    [orders, setBalance, setOrders, updateOrder, fetchOrders, currentPage],
+    [orders, setBalance, setOrders, updateOrder, fetchOrders, currentPage]
   );
 
   // HANDLE SL
@@ -507,14 +522,45 @@ export default function Home() {
       setOrders(updatedOrders);
       deleteOrder(orderId, () => fetchOrders(currentPage));
     },
-    [orders, setOrders, deleteOrder, fetchOrders, currentPage],
+    [orders, setOrders, deleteOrder, fetchOrders, currentPage]
   );
 
   const handleUpdateNotes = useCallback(
     async (orderId: string, notes: string) => {
       await updateOrder({ id: orderId, notes }, () => fetchOrders(currentPage));
     },
-    [orders, setOrders, updateOrder, fetchOrders, currentPage],
+    [orders, setOrders, updateOrder, fetchOrders, currentPage]
+  );
+
+  const handleTabSelect = useCallback((tab: SymbolsUpperCase) => {
+    setSelectedCrypto(tab);
+    localStorage.setItem("selectedCrypto", tab);
+  }, []);
+
+  const handleTabAdd = useCallback(
+    (tab: SymbolsUpperCase) => {
+      if (!activeTabs.includes(tab)) {
+        setActiveTabs((prev) => [...prev, tab]);
+      }
+      handleTabSelect(tab);
+    },
+    [activeTabs, handleTabSelect]
+  );
+
+  const handleTabClose = useCallback(
+    (tab: SymbolsUpperCase) => {
+      const newTabs = activeTabs.filter((t) => t !== tab);
+      setActiveTabs(newTabs);
+
+      if (selectedCrypto === tab) {
+        if (newTabs.length > 0) {
+          handleTabSelect(newTabs[newTabs.length - 1]);
+        } else {
+          setSelectedCrypto("");
+        }
+      }
+    },
+    [activeTabs, selectedCrypto, handleTabSelect]
   );
 
   return (
@@ -522,16 +568,25 @@ export default function Home() {
       <div className="mx-auto px-4 py-4">
         <div
           className={`flex items-center ${
-            fullChart ? "justify-between" : "justify-end"
+            fullChart ? "justify-between" : "justify-between"
           } mb-2`}
         >
+          {/* Horizontal Tabs for Standard View */}
+          {!fullChart && (
+            <CryptoTabs
+              activeTabs={activeTabs}
+              selectedTab={selectedCrypto}
+              onSelect={handleTabSelect}
+              onClose={handleTabClose}
+              onAdd={handleTabAdd}
+            />
+          )}
+
           {fullChart ? (
             <div className="w-[95%]">
               <TradingInterfaceHorizontal
                 onTrade={handleTrade}
                 selectedCrypto={selectedCrypto}
-                onCryptoChange={setSelectedCrypto}
-                cryptocurrencies={CRYPTOCURRENCIES}
                 onSquareOff={handleSquareOff}
                 onScreenshotToggle={handleScreenshotToggle}
                 orders={orders}
@@ -539,14 +594,32 @@ export default function Home() {
             </div>
           ) : null}
           <button
-            className="bg-violet-500 hover:bg-violet-600 text-white px-4 py-1 rounded transition-colors font-normal"
+            className="bg-violet-500 hover:bg-violet-600 text-white px-4 py-1 rounded transition-colors font-normal whitespace-nowrap"
             onClick={() => setFullChart(!fullChart)}
           >
             {fullChart ? "Exit" : "Full Chart"}
           </button>
         </div>
 
-        <div className={`grid ${fullChart ? "" : "grid-cols-[5fr_1fr]"} gap-6`}>
+        <div
+          className={`grid ${
+            fullChart ? "grid-cols-[auto_1fr]" : "grid-cols-[5fr_1fr]"
+          } gap-6 transition-all`}
+        >
+          {/* Vertical Tabs for Full Chart View */}
+          {fullChart && (
+            <div className="pt-2">
+              <CryptoTabs
+                activeTabs={activeTabs}
+                selectedTab={selectedCrypto}
+                onSelect={handleTabSelect}
+                onClose={handleTabClose}
+                onAdd={handleTabAdd}
+                orientation="vertical"
+              />
+            </div>
+          )}
+
           <div className="bg-white rounded-lg shadow-md overflow-hidden h-[90vh]">
             <TradingViewChart symbol={selectedCrypto} />
           </div>
@@ -555,8 +628,6 @@ export default function Home() {
               <TradingInterface
                 onTrade={handleTrade}
                 selectedCrypto={selectedCrypto}
-                onCryptoChange={setSelectedCrypto}
-                cryptocurrencies={CRYPTOCURRENCIES}
                 onSquareOff={handleSquareOff}
                 onScreenshotToggle={handleScreenshotToggle}
                 orders={orders}

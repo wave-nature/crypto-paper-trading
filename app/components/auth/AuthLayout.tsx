@@ -4,7 +4,6 @@ import { useEffect } from "react";
 import toast from "react-hot-toast";
 import useAuthStore from "@/store/useAuthStore";
 import useOrdersHook from "@/hooks/useOrders";
-import { AUTH_LOGIN } from "@/constants/navigation";
 import { createSupabaseBrowserClient } from "@/utils/supabase/client";
 import useAccountHook from "@/hooks/useAccount";
 import useSettingsHook from "@/hooks/useSettings";

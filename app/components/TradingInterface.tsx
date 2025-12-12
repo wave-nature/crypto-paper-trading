@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Switch } from "@/components/ui/switch";
@@ -22,22 +22,18 @@ interface TradingInterfaceProps {
       limitPrice?: number;
       stopLoss?: number;
       target?: number;
-    },
+    }
   ) => void;
   selectedCrypto: SymbolsUpperCase | "";
-  onCryptoChange: (crypto: SymbolsUpperCase | "") => void;
   onSquareOff: (orderId: string) => void;
   onScreenshotToggle: (enable: boolean) => void;
   orders: Order[];
-  cryptocurrencies: string[];
 }
 
 export default function TradingInterface({
   selectedCrypto,
   orders,
-  cryptocurrencies,
   onTrade,
-  onCryptoChange,
   onSquareOff,
   onScreenshotToggle,
 }: TradingInterfaceProps) {
@@ -115,7 +111,7 @@ export default function TradingInterface({
 
   // open order
   const order = orders.find(
-    (order) => order.status === "open" && order.symbol === selectedCrypto,
+    (order) => order.status === "open" && order.symbol === selectedCrypto
   );
 
   return (
@@ -140,24 +136,6 @@ export default function TradingInterface({
 
       <CardContent className="p-4 pt-0">
         <div className="space-y-4">
-          <div>
-            <label className="block mb-1">Cryptocurrency:</label>
-            <select
-              value={selectedCrypto}
-              onChange={(e) => {
-                const crypto = e.target.value as SymbolsUpperCase;
-                onCryptoChange(crypto);
-                localStorage.setItem("selectedCrypto", crypto);
-              }}
-              className="w-full p-2 border border-violet-200 rounded focus:outline-none focus:ring-2 focus:ring-violet-500"
-            >
-              {cryptocurrencies.map((crypto) => (
-                <option key={crypto} value={crypto}>
-                  {crypto}
-                </option>
-              ))}
-            </select>
-          </div>
           <ToggleGroup
             type="single"
             value={orderType}
@@ -259,7 +237,7 @@ export default function TradingInterface({
                         order?.id &&
                         order.symbol === selectedCrypto &&
                         order.status === "open" &&
-                        onSquareOff(order.id),
+                        onSquareOff(order.id)
                     );
                   }}
                   size="icon"

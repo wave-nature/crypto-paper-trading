@@ -21,22 +21,18 @@ interface TradingInterfaceProps {
       limitPrice?: number;
       stopLoss?: number;
       target?: number;
-    },
+    }
   ) => void;
   selectedCrypto: SymbolsUpperCase | "";
-  onCryptoChange: (crypto: SymbolsUpperCase | "") => void;
   onSquareOff: (orderId: string) => void;
   onScreenshotToggle: (enable: boolean) => void;
   orders: Order[];
-  cryptocurrencies: string[];
 }
 
 export default function TradingInterfaceHorizontal({
   selectedCrypto,
   orders,
-  cryptocurrencies,
   onTrade,
-  onCryptoChange,
   onSquareOff,
   onScreenshotToggle,
 }: TradingInterfaceProps) {
@@ -114,30 +110,13 @@ export default function TradingInterfaceHorizontal({
 
   // open order
   const order = orders.find(
-    (order) => order.status === "open" && order.symbol === selectedCrypto,
+    (order) => order.status === "open" && order.symbol === selectedCrypto
   );
 
   return (
     <div className="border border-violet-500/20 bg-gradient-to-br from-violet-50/50 to-white dark:from-violet-950/20 dark:to-background py-0 m-0 rounded-lg">
       <div className="px-[3px] w-full">
         <div className="my-[3px] flex items-center justify-between w-full">
-          <div>
-            <select
-              value={selectedCrypto}
-              onChange={(e) => {
-                const crypto = e.target.value as SymbolsUpperCase;
-                onCryptoChange(crypto);
-                localStorage.setItem("selectedCrypto", crypto);
-              }}
-              className="w-full p-1 border border-violet-200 rounded focus:outline-none focus:ring-2 focus:ring-violet-500"
-            >
-              {cryptocurrencies.map((crypto) => (
-                <option key={crypto} value={crypto}>
-                  {crypto}
-                </option>
-              ))}
-            </select>
-          </div>
           <ToggleGroup
             type="single"
             value={orderType}
@@ -239,7 +218,7 @@ export default function TradingInterfaceHorizontal({
                       order?.id &&
                       order.symbol === selectedCrypto &&
                       order.status === "open" &&
-                      onSquareOff(order.id),
+                      onSquareOff(order.id)
                   );
                 }}
                 size="icon"
