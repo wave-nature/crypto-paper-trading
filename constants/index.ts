@@ -6,3 +6,5 @@ export const CRYPTOCURRENCIES: SymbolsUpperCase[] = [
   "SOL",
   "XAUUSD",
 ];
+
+export const ORIGINAL_SORTED_ARR = [40, 30, 20, 10];

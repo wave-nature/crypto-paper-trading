@@ -24,7 +24,7 @@ import {
   ORDER_UPDATED_SUCCESSFULLY,
 } from "@/constants/toastMessages";
 import useSummaryHook from "@/hooks/useSummary";
-import { CRYPTOCURRENCIES } from "@/constants";
+import { CRYPTOCURRENCIES, ORIGINAL_SORTED_ARR } from "@/constants";
 // extra pixels to extend screenshot area
 const EXTRA_BOTTOM = 50;
 
@@ -47,6 +47,7 @@ export default function Home() {
   const [orderTab, setOrderTab] = useState<OrderTabs>("open");
   const [activeTabs, setActiveTabs] =
     useState<SymbolsUpperCase[]>(CRYPTOCURRENCIES);
+  const [sortedArr, setSortedArr] = useState<number[]>(ORIGINAL_SORTED_ARR);
 
   const currentPrices = useCurrentPrices();
 
@@ -69,6 +70,21 @@ export default function Home() {
   usePriceFetcher({ symbol: selectedCrypto, orders });
 
   const balance = user?.balance || 0;
+
+  // rearrange charts
+  useEffect(() => {
+    if (selectedCrypto) {
+      const activeIndex = CRYPTOCURRENCIES.indexOf(selectedCrypto);
+      const maxValue = [...sortedArr].sort((a, b) => b - a)[0];
+      const maxIndex = sortedArr.indexOf(maxValue);
+      const updatedArr = [...sortedArr];
+      // swap values
+      const tempValue = updatedArr[activeIndex];
+      updatedArr[activeIndex] = updatedArr[maxIndex];
+      updatedArr[maxIndex] = tempValue;
+      setSortedArr(updatedArr);
+    }
+  }, [selectedCrypto]);
 
   useEffect(() => {
     const crypto = localStorage.getItem("selectedCrypto");
@@ -153,7 +169,9 @@ export default function Home() {
       fullCanvas.height = bitmap.height;
       const fullCtx = fullCanvas.getContext("2d")!;
       fullCtx.drawImage(bitmap, 0, 0);
-      const chartRef = document.getElementById("tradingview_widget");
+      const chartRef = document.getElementById(
+        `tradingview_widget_${selectedCrypto}`
+      );
       // Now crop the TradingView chart region
       if (!chartRef) {
         console.error("Chart ref missing");
@@ -620,8 +638,14 @@ export default function Home() {
             </div>
           )}
 
-          <div className="bg-white rounded-lg shadow-md overflow-hidden h-[90vh]">
-            <TradingViewChart symbol={selectedCrypto} />
+          <div className="bg-white rounded-lg shadow-md overflow-hidden h-[90vh] relative">
+            {CRYPTOCURRENCIES.map((crypto, index) => (
+              <TradingViewChart
+                key={index}
+                symbol={crypto}
+                z={sortedArr[index]}
+              />
+            ))}
           </div>
           {fullChart ? null : (
             <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
