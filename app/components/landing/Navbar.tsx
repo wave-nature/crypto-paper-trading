@@ -11,7 +11,6 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { user } = useAuthStore();
-  console.log('user',user)
 
   useEffect(() => {
     const handleScroll = () => {

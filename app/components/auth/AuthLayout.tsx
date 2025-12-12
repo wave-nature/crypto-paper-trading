@@ -52,9 +52,7 @@ export default function AuthLayout({
       const { data, error } = await supabase.auth.getUser();
 
       if (error || !data) {
-        toast.error(error?.message || "User not found");
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        window.location.href = AUTH_LOGIN;
+        throw new Error("User not found");
       } else {
         const userId = data.user.id;
         const { data: account, error } = await getAccount(userId);
