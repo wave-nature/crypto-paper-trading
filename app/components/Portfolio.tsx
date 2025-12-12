@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import useAuthStore from "@/store/useAuthStore";
 import { readableCurrency } from "@/utils/helpers";
+import toast from "react-hot-toast";
 
 interface PortfolioProps {
   balance: number;
@@ -16,6 +17,7 @@ export default function Portfolio({ balance }: PortfolioProps) {
   const { setBalance } = useAuthStore();
 
   const handleAddMoney = () => {
+    return toast.error("This feature exist for paid users");
     const amount = Number.parseFloat(addAmount);
     if (!isNaN(amount) && amount > 0) {
       setBalance(amount);

@@ -15,17 +15,15 @@ export default function Hero() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-foreground mb-8">
-          Master Crypto Trading <br className="hidden sm:block" />
+        <h1 className="text-4xl sm:text-6xl lg:text-8xl font-extrabold tracking-tight text-foreground mb-8">
+          What if you took this trade <br className="hidden sm:block" />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-600 animate-gradient">
-             Without The Risk
+             in realtime?
           </span>
         </h1>
         
         <p className="max-w-2xl mx-auto text-xl text-muted-foreground mb-10 leading-relaxed">
-          Experience the thrill of the market with zero financial risk. 
-          Real-time data, advanced charting, and a community of traders 
-          waiting to share their strategies.
+         Don't worry, one day you will, because you are on the way to wipe out the line between beginner and pro trader with sheer practice, dedication, and discipline.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">

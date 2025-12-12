@@ -4,12 +4,14 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { AUTH_LOGIN, AUTH_SIGNUP } from "@/constants/navigation";
-
+import { AUTH_LOGIN, AUTH_SIGNUP, DASHBOARD } from "@/constants/navigation";
+import useAuthStore from "@/store/useAuthStore";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const { user } = useAuthStore();
+  console.log('user',user)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -60,18 +62,29 @@ export default function Navbar() {
 
           {/* Desktop Auth Buttons */}
           <div className="hidden md:flex items-center space-x-4">
-            <Link
-              href={AUTH_LOGIN}
-              className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
-            >
-              Login
-            </Link>
-            <Link
-              href={AUTH_SIGNUP}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-full text-sm font-medium transition-all shadow-lg hover:shadow-primary/25"
-            >
-              Sign up
-            </Link>
+            {user ? (
+              <Link
+                href={DASHBOARD}
+                className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-full text-sm font-medium transition-all shadow-lg hover:shadow-primary/25"
+              >
+                Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href={AUTH_LOGIN}
+                  className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+                >
+                  Login
+                </Link>
+                <Link
+                  href={AUTH_SIGNUP}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-full text-sm font-medium transition-all shadow-lg hover:shadow-primary/25"
+                >
+                  Sign up
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -81,7 +94,11 @@ export default function Navbar() {
               className="inline-flex items-center justify-center p-2 rounded-md text-muted-foreground hover:text-primary hover:bg-accent focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary"
             >
               <span className="sr-only">Open main menu</span>
-              {isOpen ? <X className="block h-6 w-6" /> : <Menu className="block h-6 w-6" />}
+              {isOpen ? (
+                <X className="block h-6 w-6" />
+              ) : (
+                <Menu className="block h-6 w-6" />
+              )}
             </button>
           </div>
         </div>
