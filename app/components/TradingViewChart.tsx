@@ -10,11 +10,10 @@ declare global {
 
 interface TradingViewChartProps {
   symbol: string;
+  z: number;
 }
 
-export default function TradingViewChart({ symbol }: TradingViewChartProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-
+export default function TradingViewChart({ symbol, z }: TradingViewChartProps) {
   useEffect(() => {
     // Delay loading by 1 second after DOM loads
     const timer = setTimeout(() => {
@@ -22,7 +21,10 @@ export default function TradingViewChart({ symbol }: TradingViewChartProps) {
       script.src = "https://s3.tradingview.com/tv.js";
       script.async = true;
       script.onload = () => {
-        if (containerRef.current) {
+        const containerRef = document.getElementById(
+          `tradingview_widget_${symbol}`
+        );
+        if (containerRef) {
           new window.TradingView.widget({
             autosize: true,
             symbol: symbol.includes("XAUUSD")
@@ -36,7 +38,7 @@ export default function TradingViewChart({ symbol }: TradingViewChartProps) {
             toolbar_bg: "#f1f3f6",
             enable_publishing: false,
             allow_symbol_change: true,
-            container_id: containerRef.current.id,
+            container_id: containerRef.id,
             hide_side_toolbar: false, // Show left toolbar for drawings
             withdateranges: true,
             drawings_access: {
@@ -72,7 +74,7 @@ export default function TradingViewChart({ symbol }: TradingViewChartProps) {
     return () => {
       clearTimeout(timer);
       const script = document.querySelector(
-        'script[src="https://s3.tradingview.com/tv.js"]',
+        'script[src="https://s3.tradingview.com/tv.js"]'
       );
       if (script?.parentNode) {
         script.parentNode.removeChild(script);
@@ -81,6 +83,10 @@ export default function TradingViewChart({ symbol }: TradingViewChartProps) {
   }, [symbol]);
 
   return (
-    <div id="tradingview_widget" ref={containerRef} className="w-full h-full" />
+    <div
+      id={`tradingview_widget_${symbol}`}
+      className="w-full h-full absolute"
+      style={{ zIndex: z }}
+    />
   );
 }
