@@ -1,203 +1,177 @@
 "use client";
 
-import { useState } from "react";
-import {
-  User,
-  SettingsIcon,
-  Shield,
-  Key,
-  FileText,
-  Wallet,
-  TrendingUp,
-  Building,
-  CreditCard,
-  ArrowUpDown,
-  Bot,
-  ChevronLeft,
-  Bell,
-  Lock,
-  Palette,
-  Globe,
-} from "lucide-react";
+import { ChevronLeft, Bell, Lock, Palette, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import Link from "next/link";
-import Navbar from "@/app/components/Navbar"
-
-
-const sidebarItems = [
-  { icon: TrendingUp, label: "Positions", href: "/positions" },
-  { icon: User, label: "Sub Accounts", href: "/sub-accounts" },
-  { icon: FileText, label: "PNL Analytics", href: "/pnl-analytics" },
-  { icon: Building, label: "Bank Details", href: "/bank-details" },
-  { icon: Wallet, label: "Add Funds", href: "/add-funds" },
-  { icon: ArrowUpDown, label: "Withdraw", href: "/withdraw" },
-  { icon: Bot, label: "Trading Bot", href: "/trading-bot" },
-  { icon: User, label: "Profile", href: "/profile" },
-  { icon: SettingsIcon, label: "Preferences", href: "/preferences" },
-  { icon: Shield, label: "Security", href: "/security" },
-  { icon: Key, label: "API Keys", href: "/api-keys" },
-  { icon: FileText, label: "Trxn. Logs", href: "/transactions" },
-];
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import Sidebar from "@/app/components/Sidebar";
+import useSidebar from "@/store/useSidebar";
 
 export default function SettingsPageContent() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-
+  const { isSidebarOpen, setIsSidebarOpen } = useSidebar();
   return (
     <>
-      <div className="flex min-h-screen bg-gradient-to-br from-violet-50 via-purple-50 to-violet-100">
+      <div className="flex min-h-screen bg-background">
         {/* Sidebar */}
-        <aside
-          className={`${
-            isSidebarOpen ? "w-64" : "w-0"
-          } bg-white border-r border-violet-200 transition-all duration-300 overflow-hidden flex-shrink-0`}
-        >
-          <div className="p-4 h-full flex flex-col">
-            <div className="space-y-1 flex-1">
-              {sidebarItems.map((item) => {
-                const isActive = item.label === "Preferences";
-                return (
-                  <Link
-                    key={item.label}
-                    href={item.href}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                      isActive
-                        ? "bg-violet-100 text-violet-700 border-l-4 border-violet-500"
-                        : "text-gray-600 hover:bg-violet-50 hover:text-violet-600"
-                    }`}
-                  >
-                    <item.icon className="h-5 w-5" />
-                    <span className="text-sm font-medium">{item.label}</span>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        </aside>
-
-        {/* Toggle Sidebar Button */}
-        <button
-          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className="fixed left-0 top-1/2 -translate-y-1/2 bg-violet-500 text-white p-2 rounded-r-lg shadow-lg hover:bg-violet-600 transition-colors z-10"
-          style={{ left: isSidebarOpen ? "256px" : "0" }}
-        >
-          <ChevronLeft
-            className={`h-5 w-5 transition-transform ${
-              !isSidebarOpen ? "rotate-180" : ""
-            }`}
-          />
-        </button>
+        <Sidebar />
 
         {/* Main Content */}
         <main className="flex-1 p-8 overflow-auto">
-          <div className="max-w-3xl mx-auto">
-            <h1 className="text-2xl font-bold mb-6 bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
-              Settings
-            </h1>
-
+          <div className="max-w-3xl mx-auto space-y-8">
             <div className="grid gap-6">
-              <Card className="border-violet-200 shadow-lg">
-                <CardHeader className="bg-gradient-to-r from-violet-500/10 to-purple-500/10">
-                  <CardTitle className="flex items-center text-violet-700 text-base">
-                    <Bell className="h-4 w-4 mr-2" />
-                    Notifications
-                  </CardTitle>
+              <Card className="border-border bg-card">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Bell className="h-5 w-5 text-violet-600" />
+                    <CardTitle>Notifications</CardTitle>
+                  </div>
+                  <CardDescription>
+                    Choose what alerts you want to receive.
+                  </CardDescription>
                 </CardHeader>
-                <CardContent className="pt-6 space-y-4">
+                <CardContent className="space-y-6">
                   <div className="flex items-center justify-between">
                     <Label
                       htmlFor="trade-alerts"
-                      className="font-medium text-sm"
+                      className="flex flex-col space-y-1"
                     >
-                      Trade Alerts
+                      <span className="font-medium">Trade Alerts</span>
+                      <span className="font-normal text-sm text-muted-foreground">
+                        Receive updates when orders are executed.
+                      </span>
                     </Label>
                     <Switch id="trade-alerts" />
                   </div>
                   <div className="flex items-center justify-between">
                     <Label
                       htmlFor="price-alerts"
-                      className="font-medium text-sm"
+                      className="flex flex-col space-y-1"
                     >
-                      Price Alerts
+                      <span className="font-medium">Price Alerts</span>
+                      <span className="font-normal text-sm text-muted-foreground">
+                        Get notified when assets reach your target price.
+                      </span>
                     </Label>
                     <Switch id="price-alerts" />
                   </div>
                   <div className="flex items-center justify-between">
                     <Label
                       htmlFor="email-notifications"
-                      className="font-medium text-sm"
+                      className="flex flex-col space-y-1"
                     >
-                      Email Notifications
+                      <span className="font-medium">Email Notifications</span>
+                      <span className="font-normal text-sm text-muted-foreground">
+                        Receive a daily summary of your portfolio.
+                      </span>
                     </Label>
                     <Switch id="email-notifications" />
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="border-violet-200 shadow-lg">
-                <CardHeader className="bg-gradient-to-r from-violet-500/10 to-purple-500/10">
-                  <CardTitle className="flex items-center text-violet-700 text-base">
-                    <Lock className="h-4 w-4 mr-2" />
-                    Security
-                  </CardTitle>
+              <Card className="border-border bg-card">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Lock className="h-5 w-5 text-violet-600" />
+                    <CardTitle>Security</CardTitle>
+                  </div>
+                  <CardDescription>
+                    Protect your account with additional security features.
+                  </CardDescription>
                 </CardHeader>
-                <CardContent className="pt-6 space-y-4">
+                <CardContent className="space-y-6">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="two-factor" className="font-medium text-sm">
-                      Two-Factor Authentication
+                    <Label
+                      htmlFor="two-factor"
+                      className="flex flex-col space-y-1"
+                    >
+                      <span className="font-medium">
+                        Two-Factor Authentication
+                      </span>
+                      <span className="font-normal text-sm text-muted-foreground">
+                        Add an extra layer of security to your account.
+                      </span>
                     </Label>
                     <Switch id="two-factor" />
                   </div>
-                  <Button
-                    variant="outline"
-                    className="w-full border-violet-300 hover:bg-violet-50 text-violet-700 text-sm"
-                  >
-                    Change Password
-                  </Button>
+                  <div className="pt-2">
+                    <Button variant="outline">Change Password</Button>
+                  </div>
                 </CardContent>
               </Card>
 
-              <Card className="border-violet-200 shadow-lg">
-                <CardHeader className="bg-gradient-to-r from-violet-500/10 to-purple-500/10">
-                  <CardTitle className="flex items-center text-violet-700 text-base">
-                    <Palette className="h-4 w-4 mr-2" />
-                    Appearance
-                  </CardTitle>
+              <Card className="border-border bg-card">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Palette className="h-5 w-5 text-violet-600" />
+                    <CardTitle>Appearance</CardTitle>
+                  </div>
+                  <CardDescription>
+                    Customize the look and feel of the dashboard.
+                  </CardDescription>
                 </CardHeader>
-                <CardContent className="pt-6 space-y-4">
+                <CardContent className="space-y-6">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="dark-mode" className="font-medium text-sm">
-                      Dark Mode
+                    <Label
+                      htmlFor="dark-mode"
+                      className="flex flex-col space-y-1"
+                    >
+                      <span className="font-medium">Dark Mode</span>
+                      <span className="font-normal text-sm text-muted-foreground">
+                        Switch between light and dark themes.
+                      </span>
                     </Label>
                     <Switch id="dark-mode" />
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="border-violet-200 shadow-lg">
-                <CardHeader className="bg-gradient-to-r from-violet-500/10 to-purple-500/10">
-                  <CardTitle className="flex items-center text-violet-700 text-base">
-                    <Globe className="h-4 w-4 mr-2" />
-                    Language & Region
-                  </CardTitle>
+              <Card className="border-border bg-card">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Globe className="h-5 w-5 text-violet-600" />
+                    <CardTitle>Language & Region</CardTitle>
+                  </div>
+                  <CardDescription>
+                    Set your preferred language and regional settings.
+                  </CardDescription>
                 </CardHeader>
-                <CardContent className="pt-6 space-y-4">
-                  <div>
-                    <Label className="font-medium text-sm">Language</Label>
-                    <select className="w-full mt-2 p-2 border border-violet-300 rounded-md focus:ring-violet-500 focus:border-violet-500 text-sm">
-                      <option>English</option>
-                      <option>Spanish</option>
-                      <option>French</option>
-                    </select>
+                <CardContent className="space-y-6">
+                  <div className="space-y-2">
+                    <Label>Language</Label>
+                    <Select defaultValue="english">
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Select a language" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="english">English</SelectItem>
+                        <SelectItem value="spanish">Spanish</SelectItem>
+                        <SelectItem value="french">French</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </CardContent>
               </Card>
 
-              <Button className="w-full bg-violet-500 hover:bg-violet-600 text-white text-sm">
-                Save Changes
-              </Button>
+              <div className="flex justify-end pt-4">
+                <Button className="px-8 bg-violet-600 hover:bg-violet-700 text-white">
+                  Save Preferences
+                </Button>
+              </div>
             </div>
           </div>
         </main>

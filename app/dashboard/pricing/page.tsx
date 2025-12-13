@@ -1,216 +1,290 @@
 "use client";
 
-import { useState } from "react";
-import {
-  User,
-  SettingsIcon,
-  Shield,
-  Key,
-  FileText,
-  Wallet,
-  TrendingUp,
-  Building,
-  ArrowUpDown,
-  Bot,
-  ChevronLeft,
-  Check,
-  DollarSign,
-} from "lucide-react";
+import { Check, Crown, Zap, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import Sidebar from "@/app/components/Sidebar";
+import PaymentModal from "@/app/components/PaymentModal";
+import { useState } from "react";
+import { cn } from "@/lib/utils";
 import Link from "next/link";
-import Navbar from "@/app/components/Navbar";
-
-const sidebarItems = [
-  { icon: TrendingUp, label: "Positions", href: "/positions" },
-  { icon: User, label: "Sub Accounts", href: "/sub-accounts" },
-  { icon: FileText, label: "PNL Analytics", href: "/pnl-analytics" },
-  { icon: Building, label: "Bank Details", href: "/bank-details" },
-  { icon: Wallet, label: "Add Funds", href: "/add-funds" },
-  { icon: ArrowUpDown, label: "Withdraw", href: "/withdraw" },
-  { icon: Bot, label: "Trading Bot", href: "/trading-bot" },
-  { icon: User, label: "Profile", href: "/profile" },
-  { icon: SettingsIcon, label: "Preferences", href: "/preferences" },
-  { icon: Shield, label: "Security", href: "/security" },
-  { icon: Key, label: "API Keys", href: "/api-keys" },
-  { icon: FileText, label: "Trxn. Logs", href: "/transactions" },
-];
 
 export default function PricingPageContent() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isAnnual, setIsAnnual] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<{
+    name: string;
+    price: string;
+    period: string;
+  } | null>(null);
+
+  // Mock subscription data
+  const currentPlan = {
+    name: "Free",
+    expiresAt: null,
+  };
+
+  const handleUpgrade = (
+    planName: string,
+    monthlyPrice: number,
+    annualPrice: number
+  ) => {
+    const price = isAnnual ? annualPrice.toString() : monthlyPrice.toString();
+    setSelectedPlan({
+      name: planName,
+      price,
+      period: isAnnual ? "yearly" : "monthly",
+    });
+    setIsModalOpen(true);
+  };
 
   return (
     <>
-      <div className="flex min-h-screen bg-gradient-to-br from-violet-50 via-purple-50 to-violet-100">
-        {/* Sidebar */}
-        <aside
-          className={`${
-            isSidebarOpen ? "w-64" : "w-0"
-          } bg-white border-r border-violet-200 transition-all duration-300 overflow-hidden flex-shrink-0`}
-        >
-          <div className="p-4 h-full flex flex-col">
-            <div className="space-y-1 flex-1">
-              {sidebarItems.map((item) => {
-                const isActive = false;
-                return (
-                  <Link
-                    key={item.label}
-                    href={item.href}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                      isActive
-                        ? "bg-violet-100 text-violet-700 border-l-4 border-violet-500"
-                        : "text-gray-600 hover:bg-violet-50 hover:text-violet-600"
-                    }`}
-                  >
-                    <item.icon className="h-5 w-5" />
-                    <span className="text-sm font-medium">{item.label}</span>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        </aside>
+      <div className="flex min-h-screen bg-background">
+        <Sidebar />
 
-        {/* Toggle Sidebar Button */}
-        <button
-          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className="fixed left-0 top-1/2 -translate-y-1/2 bg-violet-500 text-white p-2 rounded-r-lg shadow-lg hover:bg-violet-600 transition-colors z-10"
-          style={{ left: isSidebarOpen ? "256px" : "0" }}
-        >
-          <ChevronLeft
-            className={`h-5 w-5 transition-transform ${
-              !isSidebarOpen ? "rotate-180" : ""
-            }`}
-          />
-        </button>
-
-        {/* Main Content */}
         <main className="flex-1 p-8 overflow-auto">
-          <div className="max-w-3xl mx-auto">
-            <h1 className="text-2xl font-bold mb-6 bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent text-center">
-              Choose Your Plan
-            </h1>
-            <p className="text-gray-600 text-sm text-center mb-8">
-              Select the perfect plan for your trading journey
-            </p>
-
-            <div className="grid md:grid-cols-3 gap-6">
-              {/* Free Plan */}
-              <Card className="border-violet-200 shadow-lg hover:shadow-xl transition-shadow">
-                <CardHeader className="bg-gradient-to-r from-violet-500/10 to-purple-500/10">
-                  <CardTitle className="text-base text-violet-700">
-                    Free
-                  </CardTitle>
-                  <div className="mt-3">
-                    <span className="text-3xl font-bold">$0</span>
-                    <span className="text-gray-600 text-sm">/month</span>
+          <div className="max-w-7xl mx-auto">
+            {/* Simplified Subscription Status Card */}
+            <div className="mb-16 rounded-2xl border border-border bg-card p-8 shadow-sm">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+                <div className="flex items-center gap-6">
+                  <div className="w-14 h-14 bg-violet-100 dark:bg-violet-900/30 rounded-xl flex items-center justify-center">
+                    <Crown className="h-7 w-7 text-violet-600 dark:text-violet-400" />
                   </div>
-                </CardHeader>
-                <CardContent className="pt-6">
-                  <ul className="space-y-2.5 mb-6">
-                    <li className="flex items-center text-sm">
-                      <Check className="h-4 w-4 text-violet-600 mr-2 flex-shrink-0" />
-                      <span>$1,000,000 virtual balance</span>
-                    </li>
-                    <li className="flex items-center text-sm">
-                      <Check className="h-4 w-4 text-violet-600 mr-2 flex-shrink-0" />
-                      <span>Basic trading features</span>
-                    </li>
-                    <li className="flex items-center text-sm">
-                      <Check className="h-4 w-4 text-violet-600 mr-2 flex-shrink-0" />
-                      <span>9 cryptocurrencies</span>
-                    </li>
-                  </ul>
-                  <Button className="w-full bg-violet-500 hover:bg-violet-600 text-white text-sm">
-                    Current Plan
-                  </Button>
-                </CardContent>
-              </Card>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">
+                      Current Plan
+                    </p>
+                    <h3 className="text-2xl font-bold text-foreground">
+                      {currentPlan.name}
+                    </h3>
+                  </div>
+                </div>
 
-              {/* Pro Plan */}
-              <Card className="border-violet-500 shadow-xl hover:shadow-2xl transition-shadow relative">
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-violet-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
-                    Popular
+                {/* Stats */}
+                <div className="flex gap-8 border-l border-border pl-8">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Zap className="h-4 w-4 text-violet-500" />
+                      <span className="text-sm font-medium text-muted-foreground">
+                        Active Trades
+                      </span>
+                    </div>
+                    <p className="text-xl font-bold text-foreground">
+                      5{" "}
+                      <span className="text-sm font-normal text-muted-foreground">
+                        / 5
+                      </span>
+                    </p>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Sparkles className="h-4 w-4 text-violet-500" />
+                      <span className="text-sm font-medium text-muted-foreground">
+                        Features
+                      </span>
+                    </div>
+                    <p className="text-xl font-bold text-foreground">Basic</p>
+                  </div>
+                </div>
+
+                <div>
+                  <Button
+                    variant="outline"
+                    className="border-violet-200 hover:bg-violet-50 hover:text-violet-700 dark:border-violet-800 dark:hover:bg-violet-900/30"
+                  >
+                    Manage Billing
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <div className="text-center mb-12">
+              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4 text-foreground">
+                Upgrade Your Plan
+              </h1>
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
+                Choose the perfect plan for your trading journey
+              </p>
+
+              {/* Toggle */}
+              <div className="flex items-center justify-center space-x-4">
+                <span
+                  className={cn(
+                    "text-sm font-medium transition-colors",
+                    !isAnnual ? "text-foreground" : "text-muted-foreground"
+                  )}
+                >
+                  Monthly
+                </span>
+                <button
+                  onClick={() => setIsAnnual(!isAnnual)}
+                  className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-600 focus-visible:ring-offset-2 bg-violet-600"
+                >
+                  <span
+                    className={cn(
+                      "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+                      isAnnual ? "translate-x-5" : "translate-x-0"
+                    )}
+                  />
+                </button>
+                <span
+                  className={cn(
+                    "text-sm font-medium transition-colors",
+                    isAnnual ? "text-foreground" : "text-muted-foreground"
+                  )}
+                >
+                  Yearly{" "}
+                  <span className="text-violet-600 font-bold ml-1">
+                    (2 months free)
+                  </span>
+                </span>
+              </div>
+            </div>
+
+            {/* Pricing Cards */}
+            <div className="grid md:grid-cols-3 gap-8">
+              {/* Basic Plan */}
+              <div className="relative rounded-2xl border border-border bg-card p-6 shadow-sm flex flex-col">
+                <div className="mb-4">
+                  <h3 className="text-xl font-bold text-foreground">Basic</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Essential features for beginners
+                  </p>
+                </div>
+                <div className="mb-6">
+                  <span className="text-4xl font-bold text-foreground">
+                    Free
                   </span>
                 </div>
-                <CardHeader className="bg-gradient-to-r from-violet-500/20 to-purple-500/20">
-                  <CardTitle className="text-base text-violet-700">
-                    Pro
-                  </CardTitle>
-                  <div className="mt-3">
-                    <span className="text-3xl font-bold">$29</span>
-                    <span className="text-gray-600 text-sm">/month</span>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-6">
-                  <ul className="space-y-2.5 mb-6">
-                    <li className="flex items-center text-sm">
-                      <Check className="h-4 w-4 text-violet-600 mr-2 flex-shrink-0" />
-                      <span>$10,000,000 virtual balance</span>
+                <ul className="space-y-4 mb-8 flex-1">
+                  {[
+                    "Real-time market data",
+                    "Basic charting tools",
+                    "Portfolio tracking",
+                    "Community access",
+                    "5 active paper trades",
+                  ].map((feature) => (
+                    <li key={feature} className="flex items-start">
+                      <Check className="h-5 w-5 text-violet-500 mr-2 flex-shrink-0" />
+                      <span className="text-muted-foreground text-sm">
+                        {feature}
+                      </span>
                     </li>
-                    <li className="flex items-center text-sm">
-                      <Check className="h-4 w-4 text-violet-600 mr-2 flex-shrink-0" />
-                      <span>Advanced trading tools</span>
-                    </li>
-                    <li className="flex items-center text-sm">
-                      <Check className="h-4 w-4 text-violet-600 mr-2 flex-shrink-0" />
-                      <span>50+ cryptocurrencies</span>
-                    </li>
-                    <li className="flex items-center text-sm">
-                      <Check className="h-4 w-4 text-violet-600 mr-2 flex-shrink-0" />
-                      <span>Priority support</span>
-                    </li>
-                  </ul>
-                  <Button className="w-full bg-violet-600 hover:bg-violet-700 text-white text-sm">
-                    Upgrade Now
-                  </Button>
-                </CardContent>
-              </Card>
+                  ))}
+                </ul>
+                <Button
+                  className="w-full bg-accent text-accent-foreground hover:bg-accent/80 transition-colors"
+                  disabled
+                >
+                  Current Plan
+                </Button>
+              </div>
 
-              {/* Enterprise Plan */}
-              <Card className="border-violet-200 shadow-lg hover:shadow-xl transition-shadow">
-                <CardHeader className="bg-gradient-to-r from-violet-500/10 to-purple-500/10">
-                  <CardTitle className="text-base text-violet-700">
-                    Enterprise
-                  </CardTitle>
-                  <div className="mt-3">
-                    <span className="text-3xl font-bold">$99</span>
-                    <span className="text-gray-600 text-sm">/month</span>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-6">
-                  <ul className="space-y-2.5 mb-6">
-                    <li className="flex items-center text-sm">
-                      <Check className="h-4 w-4 text-violet-600 mr-2 flex-shrink-0" />
-                      <span>Unlimited virtual balance</span>
+              {/* Pro Plan */}
+              <div className="rounded-2xl border border-violet-500/30 bg-card p-6 shadow-md flex flex-col relative overflow-hidden">
+                <div className="mb-4">
+                  <h3 className="text-xl font-bold text-foreground">Pro</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Advanced tools for serious traders
+                  </p>
+                </div>
+                <div className="mb-6 flex items-baseline">
+                  <span className="text-4xl font-bold text-foreground">
+                    ${isAnnual ? "12" : "15"}
+                  </span>
+                  <span className="text-muted-foreground ml-1">/month</span>
+                </div>
+                <ul className="space-y-4 mb-8 flex-1">
+                  {[
+                    "Everything in Basic",
+                    "Advanced technical indicators",
+                    "Unlimited active paper trades",
+                    "Backtesting capabilities",
+                    "Ad-free experience",
+                  ].map((feature) => (
+                    <li key={feature} className="flex items-start">
+                      <Check className="h-5 w-5 text-violet-500 mr-2 flex-shrink-0" />
+                      <span className="text-muted-foreground text-sm">
+                        {feature}
+                      </span>
                     </li>
-                    <li className="flex items-center text-sm">
-                      <Check className="h-4 w-4 text-violet-600 mr-2 flex-shrink-0" />
-                      <span>All trading features</span>
+                  ))}
+                </ul>
+                <Button
+                  onClick={() => handleUpgrade("Pro", 15, 12)}
+                  className="w-full bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-500/25"
+                >
+                  Upgrade to Pro
+                </Button>
+              </div>
+
+              {/* Advanced Plan */}
+              <div className="relative rounded-2xl border border-indigo-500/50 bg-card p-6 shadow-xl flex flex-col overflow-hidden transform md:-translate-y-4">
+                <div className="absolute top-0 right-0 bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
+                  BEST VALUE
+                </div>
+                <div className="mb-4">
+                  <h3 className="text-xl font-bold text-foreground">
+                    Advanced
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    For professional day traders
+                  </p>
+                </div>
+                <div className="mb-6 flex items-baseline">
+                  <span className="text-4xl font-bold text-foreground">
+                    ${isAnnual ? "29" : "39"}
+                  </span>
+                  <span className="text-muted-foreground ml-1">/month</span>
+                </div>
+                <ul className="space-y-4 mb-8 flex-1">
+                  {[
+                    "Everything in Pro",
+                    "AI-powered trade signals",
+                    "Priority 24/7 Support",
+                    "API Access",
+                    "Dedicated Account Manager",
+                    "Early access to new features",
+                  ].map((feature) => (
+                    <li key={feature} className="flex items-start">
+                      <Check className="h-5 w-5 text-indigo-500 mr-2 flex-shrink-0" />
+                      <span className="text-muted-foreground text-sm">
+                        {feature}
+                      </span>
                     </li>
-                    <li className="flex items-center text-sm">
-                      <Check className="h-4 w-4 text-violet-600 mr-2 flex-shrink-0" />
-                      <span>All cryptocurrencies</span>
-                    </li>
-                    <li className="flex items-center text-sm">
-                      <Check className="h-4 w-4 text-violet-600 mr-2 flex-shrink-0" />
-                      <span>24/7 dedicated support</span>
-                    </li>
-                    <li className="flex items-center text-sm">
-                      <Check className="h-4 w-4 text-violet-600 mr-2 flex-shrink-0" />
-                      <span>API access</span>
-                    </li>
-                  </ul>
-                  <Button className="w-full bg-violet-500 hover:bg-violet-600 text-white text-sm">
-                    Contact Sales
-                  </Button>
-                </CardContent>
-              </Card>
+                  ))}
+                </ul>
+                <Button
+                  onClick={() => handleUpgrade("Advanced", 39, 29)}
+                  className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-lg shadow-indigo-500/25"
+                >
+                  Get Advanced
+                </Button>
+              </div>
+            </div>
+
+            <div className="mt-16 text-center">
+              <p className="text-muted-foreground text-sm">
+                All plans come with a{" "}
+                <span className="font-semibold text-violet-600">
+                  14-day free trial
+                </span>
+                . Cancel anytime.
+              </p>
             </div>
           </div>
         </main>
       </div>
+
+      {selectedPlan && (
+        <PaymentModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          plan={selectedPlan}
+        />
+      )}
     </>
   );
 }

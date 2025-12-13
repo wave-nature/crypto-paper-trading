@@ -8,3 +8,6 @@ export const AUTH_FORGOT_PASSWORD = AUTH + "/forgot-password";
 export const USER_PROFILE = DASHBOARD + "/profile";
 export const SETTINGS = DASHBOARD + "/settings";
 export const PRICING = DASHBOARD + "/pricing";
+export const PROFILE = DASHBOARD + "/profile";
+export const POSITIONS = DASHBOARD + "/positions";
+export const PNL_ANALYTICS = DASHBOARD + "/pnl-analytics";

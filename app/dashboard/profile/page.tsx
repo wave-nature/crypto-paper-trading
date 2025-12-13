@@ -1,50 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import {
-  User,
-  Mail,
-  Phone,
-  Settings,
-  Shield,
-  Key,
-  FileText,
-  Wallet,
-  TrendingUp,
-  Copy,
-  Upload,
-  Building,
-  CreditCard,
-  ArrowUpDown,
-  Bot,
-  ChevronLeft,
-} from "lucide-react";
+import { Copy, Upload, ChevronLeft, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import Link from "next/link";
-import Navbar from "@/app/components/Navbar";
-
-const sidebarItems = [
-  { icon: TrendingUp, label: "Positions", href: "/positions" },
-  { icon: User, label: "Sub Accounts", href: "/sub-accounts" },
-  { icon: FileText, label: "PNL Analytics", href: "/pnl-analytics" },
-  { icon: Building, label: "Bank Details", href: "/bank-details" },
-  { icon: Wallet, label: "Add Funds", href: "/add-funds" },
-  { icon: ArrowUpDown, label: "Withdraw", href: "/withdraw" },
-  { icon: Bot, label: "Trading Bot", href: "/trading-bot" },
-  { icon: User, label: "Profile", href: "/profile", active: true },
-  { icon: Settings, label: "Preferences", href: "/preferences" },
-  { icon: Shield, label: "Security", href: "/security" },
-  { icon: Key, label: "API Keys", href: "/api-keys" },
-  { icon: FileText, label: "Trxn. Logs", href: "/transactions" },
-];
+import Sidebar from "@/app/components/Sidebar";
+import useSidebar from "@/store/useSidebar";
 
 export default function ProfilePageContent() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const { isSidebarOpen, setIsSidebarOpen } = useSidebar();
   const [avatarFile, setAvatarFile] = useState<string | null>(null);
   const [userData, setUserData] = useState({
     firstName: "John",
@@ -72,201 +46,181 @@ export default function ProfilePageContent() {
 
   return (
     <>
-      <div className="flex min-h-screen bg-gradient-to-br from-violet-50 via-purple-50 to-violet-100">
+      <div className="flex min-h-screen bg-background">
         {/* Sidebar */}
-        <aside
-          className={`${
-            isSidebarOpen ? "w-64" : "w-0"
-          } bg-white border-r border-violet-200 transition-all duration-300 overflow-hidden flex-shrink-0`}
-        >
-          <div className="p-4 h-full flex flex-col">
-            <div className="space-y-1 flex-1">
-              {sidebarItems.map((item) => (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                    item.active
-                      ? "bg-violet-100 text-violet-700 border-l-4 border-violet-500"
-                      : "text-gray-600 hover:bg-violet-50 hover:text-violet-600"
-                  }`}
-                >
-                  <item.icon className="h-5 w-5" />
-                  <span className="text-sm font-medium">{item.label}</span>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </aside>
+        <Sidebar />
 
-        {/* Toggle Sidebar Button */}
-        <button
-          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className="fixed left-0 top-1/2 -translate-y-1/2 bg-violet-500 text-white p-2 rounded-r-lg shadow-lg hover:bg-violet-600 transition-colors z-10"
-          style={{ left: isSidebarOpen ? "256px" : "0" }}
-        >
-          <ChevronLeft
-            className={`h-5 w-5 transition-transform ${
-              !isSidebarOpen ? "rotate-180" : ""
-            }`}
-          />
-        </button>
+       
 
         {/* Main Content */}
         <main className="flex-1 p-8 overflow-auto">
-          <div className="max-w-5xl mx-auto">
-            <h1 className="text-3xl font-bold mb-8 bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
-              Profile
-            </h1>
-
-            <Card className="border-violet-200 shadow-lg mb-6">
-              <CardContent className="pt-6">
+          <div className="max-w-4xl mx-auto space-y-8">
+            <Card className="border-border bg-card">
+              <CardHeader>
+                <CardTitle>Personal Information</CardTitle>
+                <CardDescription>
+                  Update your photo and personal details here.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
                 {/* Avatar and UID Section */}
-                <div className="flex items-start justify-between mb-8">
-                  <div className="flex items-center gap-4">
-                    <div className="relative">
-                      <Avatar className="h-20 w-20 border-2 border-violet-500">
-                        <AvatarImage src={avatarFile || undefined} />
-                        <AvatarFallback className="bg-violet-100 text-violet-700 text-2xl">
-                          {userData.firstName[0]}
-                          {userData.lastName[0]}
-                        </AvatarFallback>
-                      </Avatar>
-                      <label
-                        htmlFor="avatar-upload"
-                        className="absolute bottom-0 right-0 bg-violet-500 rounded-full p-1.5 cursor-pointer hover:bg-violet-600 transition-colors"
-                      >
-                        <Upload className="h-4 w-4 text-white" />
-                        <input
-                          id="avatar-upload"
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handleAvatarUpload}
-                        />
-                      </label>
-                    </div>
-
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-gray-600 font-medium">UID:</span>
-                        <span className="font-bold text-lg">
-                          {userData.uid}
-                        </span>
-                        <button
-                          onClick={() => copyToClipboard(userData.uid)}
-                          className="text-violet-600 hover:text-violet-700"
-                        >
-                          <Copy className="h-4 w-4" />
-                        </button>
-                        <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
-                          Renew KYC
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-gray-500">{userData.email}</p>
-                    </div>
+                <div className="flex flex-col md:flex-row items-center md:items-start gap-8 mb-8 pb-8 border-b border-border">
+                  <div className="relative group">
+                    <Avatar className="h-24 w-24 border border-border">
+                      <AvatarImage src={avatarFile || undefined} />
+                      <AvatarFallback className="bg-muted text-muted-foreground text-2xl">
+                        {userData.firstName[0]}
+                        {userData.lastName[0]}
+                      </AvatarFallback>
+                    </Avatar>
+                    <label
+                      htmlFor="avatar-upload"
+                      className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity"
+                    >
+                      <Upload className="h-6 w-6 text-white" />
+                      <input
+                        id="avatar-upload"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleAvatarUpload}
+                      />
+                    </label>
                   </div>
 
-                  <Button className="bg-violet-500 hover:bg-violet-600 text-white">
-                    Get Verified →
-                  </Button>
+                  <div className="flex-1 text-center md:text-left space-y-2">
+                    <div className="flex items-center justify-center md:justify-start gap-2">
+                      <h3 className="text-xl font-bold text-foreground">
+                        {userData.firstName} {userData.lastName}
+                      </h3>
+                      <Badge
+                        variant="secondary"
+                        className="bg-green-100 text-green-700 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400"
+                      >
+                        Verified
+                      </Badge>
+                    </div>
+
+                    <div className="flex items-center justify-center md:justify-start gap-2 text-sm text-muted-foreground">
+                      <span>UID: {userData.uid}</span>
+                      <button
+                        onClick={() => copyToClipboard(userData.uid)}
+                        className="text-violet-600 hover:text-violet-700 dark:text-violet-400"
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {userData.email}
+                    </p>
+                  </div>
+
+                  <Button variant="outline">View Public Profile</Button>
                 </div>
 
                 {/* User Details Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  <div>
-                    <Label className="text-gray-500 text-sm mb-2">
-                      First Name
-                    </Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">First Name</Label>
                     <Input
+                      id="firstName"
                       value={userData.firstName}
                       onChange={(e) =>
                         setUserData({ ...userData, firstName: e.target.value })
                       }
-                      className="border-violet-200 focus:border-violet-500 focus:ring-violet-500"
                     />
                   </div>
 
-                  <div>
-                    <Label className="text-gray-500 text-sm mb-2">
-                      Last Name
-                    </Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Last Name</Label>
                     <Input
+                      id="lastName"
                       value={userData.lastName}
                       onChange={(e) =>
                         setUserData({ ...userData, lastName: e.target.value })
                       }
-                      className="border-violet-200 focus:border-violet-500 focus:ring-violet-500"
                     />
                   </div>
 
-                  <div>
-                    <Label className="text-gray-500 text-sm mb-2">
-                      Username
-                    </Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="username">Username</Label>
                     <Input
+                      id="username"
                       value={userData.username}
                       onChange={(e) =>
                         setUserData({ ...userData, username: e.target.value })
                       }
-                      className="border-violet-200 focus:border-violet-500 focus:ring-violet-500"
                     />
                   </div>
 
-                  <div>
-                    <Label className="text-gray-500 text-sm mb-2">
-                      Phone Number
-                    </Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone Number</Label>
                     <Input
+                      id="phone"
                       value={userData.phone}
                       onChange={(e) =>
                         setUserData({ ...userData, phone: e.target.value })
                       }
-                      className="border-violet-200 focus:border-violet-500 focus:ring-violet-500"
+                    />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="email">Email Address</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={userData.email}
+                      onChange={(e) =>
+                        setUserData({ ...userData, email: e.target.value })
+                      }
                     />
                   </div>
                 </div>
 
-                {/* Email Field (Full Width) */}
-                <div className="mt-6">
-                  <Label className="text-gray-500 text-sm mb-2">
-                    Email Address
-                  </Label>
-                  <Input
-                    type="email"
-                    value={userData.email}
-                    onChange={(e) =>
-                      setUserData({ ...userData, email: e.target.value })
-                    }
-                    className="border-violet-200 focus:border-violet-500 focus:ring-violet-500"
-                  />
-                </div>
-
                 {/* Save Button */}
-                <div className="mt-6 flex justify-end">
-                  <Button className="bg-violet-500 hover:bg-violet-600 text-white px-8">
+                <div className="mt-8 flex justify-end">
+                  <Button className="px-8 bg-violet-600 hover:bg-violet-700 text-white">
                     Save Changes
                   </Button>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Additional Info Card */}
-            <Card className="border-violet-200 shadow-lg">
-              <CardContent className="pt-6">
-                <h3 className="text-lg font-semibold text-violet-700 mb-4">
-                  Account Information
-                </h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-500">Account Status</p>
-                    <Badge className="bg-green-100 text-green-800 mt-1">
-                      Active
-                    </Badge>
+            {/* Account Status Card */}
+            <Card className="border-border bg-card">
+              <CardHeader>
+                <CardTitle className="text-lg">Account Information</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="p-4 rounded-lg bg-muted/50 border border-border">
+                    <p className="text-sm font-medium text-muted-foreground mb-1">
+                      Account Status
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-2 rounded-full bg-green-500" />
+                      <span className="font-semibold text-foreground">
+                        Active
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Member Since</p>
-                    <p className="font-semibold mt-1">January 2024</p>
+                  <div className="p-4 rounded-lg bg-muted/50 border border-border">
+                    <p className="text-sm font-medium text-muted-foreground mb-1">
+                      Member Since
+                    </p>
+                    <p className="font-semibold text-foreground">
+                      January 2024
+                    </p>
+                  </div>
+                  <div className="p-4 rounded-lg bg-muted/50 border border-border">
+                    <p className="text-sm font-medium text-muted-foreground mb-1">
+                      KYC Status
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-violet-600" />
+                      <span className="font-semibold text-foreground">
+                        Verified level 2
+                      </span>
+                    </div>
                   </div>
                 </div>
               </CardContent>
