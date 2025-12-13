@@ -18,11 +18,7 @@ import { createSupabaseBrowserClient } from "@/utils/supabase/client";
 import useSettingsHook from "@/hooks/useSettings";
 import useSettings from "@/store/useSettings";
 import CryptoTabs from "./CryptoTabs";
-import {
-  ORDER_PLACED_SUCCESSFULLY,
-  ORDER_SQUARED_OFF,
-  ORDER_UPDATED_SUCCESSFULLY,
-} from "@/constants/toastMessages";
+import { ORDER_PLACED_SUCCESSFULLY } from "@/constants/toastMessages";
 import useSummaryHook from "@/hooks/useSummary";
 import { CRYPTOCURRENCIES, ORIGINAL_SORTED_ARR } from "@/constants";
 // extra pixels to extend screenshot area
@@ -40,11 +36,20 @@ declare global {
 export default function Home() {
   const { user, setBalance } = useAuthStore();
   const { orders, setOrders } = useOrders();
-  const { saveOrder, updateOrder, deleteOrder, getAllOrders } = useOrdersHook();
+  const { saveOrder } = useOrdersHook();
   const { updateSettings, getSettings } = useSettingsHook();
-  const { getSummary } = useSummaryHook();
+  const {
+    pagination,
+    orderTab,
+    setOrderTab,
+    fetchOrders,
+    handleDeleteOrder,
+    handleSquareOff,
+    handleUpdateNotes,
+    handlePageChange,
+    handleUpdateTrade,
+  } = useOrdersHook();
   const { settings } = useSettings();
-  const [orderTab, setOrderTab] = useState<OrderTabs>("open");
   const [activeTabs, setActiveTabs] =
     useState<SymbolsUpperCase[]>(CRYPTOCURRENCIES);
   const [sortedArr, setSortedArr] = useState<number[]>(ORIGINAL_SORTED_ARR);
@@ -59,12 +64,6 @@ export default function Home() {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 10,
-    total: 0,
-    totalPages: 0,
-  });
 
   // Price fetcher runs in the background
   usePriceFetcher({ symbol: selectedCrypto, orders });
@@ -108,34 +107,6 @@ export default function Home() {
       setSelectedCrypto("BTC");
     }
   }, [orders, activeTabs]); // Added activeTabs to dep array logic if needed but keeping minimal to avoid loops
-
-  // Fetch orders with pagination
-  const fetchOrders = useCallback(
-    async (page: number) => {
-      if (!user?.id) return;
-      const paginationData = await getAllOrders(user.id, page, 10, orderTab);
-      if (paginationData) {
-        setPagination(paginationData);
-        setCurrentPage(page);
-      }
-    },
-    [user?.id, getAllOrders, orderTab]
-  );
-
-  // Initial fetch
-  useEffect(() => {
-    if (user?.id) {
-      fetchOrders(1);
-    }
-  }, [user?.id, orderTab]);
-
-  // Handle page change
-  const handlePageChange = useCallback(
-    (page: number) => {
-      fetchOrders(page);
-    },
-    [fetchOrders]
-  );
 
   // Screenshot capture function
   const captureScreenshot = useCallback(async (): Promise<string | null> => {
@@ -346,47 +317,6 @@ export default function Home() {
     ]
   );
 
-  const handleUpdateTrade = useCallback(
-    (order: Order, quantity: number, stopLoss?: number, target?: number) => {
-      const symbol = order.symbol;
-      const currentPrice = currentPrices[symbol.toLocaleLowerCase() as Symbols];
-
-      if (currentPrice === null) return;
-      const prevCurrentPriceCost = order.quantity * order.price;
-      const currentCost = quantity * currentPrice;
-      const previousQuantity = order.quantity;
-      const avgPrice =
-        (prevCurrentPriceCost + currentCost) / (previousQuantity + quantity);
-      if (currentCost > balance) {
-        alert("Insufficient funds!");
-        return;
-      }
-
-      // setBalance(-currentCost);
-      const updatedOrderDetails = {
-        ...order,
-        quantity: order.quantity + quantity,
-        price: avgPrice,
-        timestamp: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        // order_details: orderDetails,
-      };
-      const findOrderIndex = orders.findIndex((ord) => ord.id === order.id);
-      if (findOrderIndex === -1) return toast.error("Order not found!");
-      const prevOrders = [...orders];
-      const findOrder = prevOrders[findOrderIndex];
-      findOrder.quantity = order.quantity + quantity;
-      findOrder.price = avgPrice;
-      findOrder.timestamp = new Date().toISOString();
-      prevOrders[findOrderIndex] = findOrder;
-
-      setOrders(prevOrders);
-      toast.success(ORDER_UPDATED_SUCCESSFULLY);
-      updateOrder(updatedOrderDetails, () => fetchOrders(currentPage));
-    },
-    [orders, balance, setOrders, updateOrder, fetchOrders, currentPage]
-  );
-
   // handle limit order execution
   // useEffect(() => {
   //   if (!currentPrice) return;
@@ -437,61 +367,6 @@ export default function Home() {
   //   }
   // }, [currentPrice, orders, balance, setBalance, setOrders]);
 
-  // HANDLE IT IN BETTER WAY
-  const handleSquareOff = useCallback(
-    (orderId: string) => {
-      const prevOrders = [...orders];
-      const ordersUpdate: Order[] = prevOrders.map((order) => {
-        if (order.id === orderId && order.status === "open") {
-          const currentPrice =
-            currentPrices[order.symbol.toLowerCase() as Symbols];
-          const profit =
-            order.type === "buy"
-              ? (currentPrice - order.price) * order.quantity
-              : (order.price - currentPrice) * order.quantity;
-
-          return {
-            ...order,
-            status: "closed",
-            closed_price: currentPrice,
-            profit,
-          };
-        }
-
-        return order;
-      });
-      // calculate total balance after square off
-      const latestClosedOrder = ordersUpdate.sort(
-        (a, b) =>
-          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-      )[0];
-      let totalBalance = 0;
-      if (
-        latestClosedOrder.status === "closed" &&
-        latestClosedOrder.profit !== undefined
-      )
-        totalBalance =
-          latestClosedOrder.quantity * latestClosedOrder.price +
-          latestClosedOrder.profit;
-
-      setBalance(totalBalance);
-      setOrders(ordersUpdate);
-
-      // update order in database
-      const order = ordersUpdate.find(
-        (order) => order.id === orderId && order.status === "closed"
-      );
-      if (order) {
-        toast.success(ORDER_SQUARED_OFF);
-        updateOrder(order, () => {
-          getSummary({ type: "today" });
-          fetchOrders(currentPage);
-        });
-      }
-    },
-    [orders, setBalance, setOrders, updateOrder, fetchOrders, currentPage]
-  );
-
   // HANDLE SL
   // useEffect(() => {
   //   if (!currentPrice) return;
@@ -533,22 +408,6 @@ export default function Home() {
   //     }
   //   }
   // }, [orders, handleSquareOff]);
-
-  const handleDeleteOrder = useCallback(
-    (orderId: string) => {
-      const updatedOrders = orders.filter((order) => order.id !== orderId);
-      setOrders(updatedOrders);
-      deleteOrder(orderId, () => fetchOrders(currentPage));
-    },
-    [orders, setOrders, deleteOrder, fetchOrders, currentPage]
-  );
-
-  const handleUpdateNotes = useCallback(
-    async (orderId: string, notes: string) => {
-      await updateOrder({ id: orderId, notes }, () => fetchOrders(currentPage));
-    },
-    [orders, setOrders, updateOrder, fetchOrders, currentPage]
-  );
 
   const handleTabSelect = useCallback((tab: SymbolsUpperCase) => {
     setSelectedCrypto(tab);
@@ -666,15 +525,14 @@ export default function Home() {
           </div>
           <OrderTable
             orders={orders}
-            selectedCrypto={selectedCrypto}
+            pagination={pagination}
+            orderTab={orderTab}
             onSquareOff={handleSquareOff}
             onDeleteOrder={handleDeleteOrder}
             onUpdateTrade={handleUpdateTrade}
             onUpdateNotes={handleUpdateNotes}
-            pagination={pagination}
             onPageChange={handlePageChange}
             onOrderTabChange={setOrderTab}
-            orderTab={orderTab}
           />
         </div>
       </div>

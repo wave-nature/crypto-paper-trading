@@ -35,7 +35,6 @@ import useOrders from "@/store/useOrders";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 import dynamic from "next/dynamic";
-import { set } from "react-hook-form";
 import Spinner from "@/components/ui/Spinner";
 import toast from "react-hot-toast";
 
@@ -44,7 +43,6 @@ const Editor = dynamic(() => import("react-simple-wysiwyg"), { ssr: false });
 interface OrderTableProps {
   orderTab: OrderTabs;
   orders: Order[];
-  selectedCrypto: string;
   onSquareOff: (orderId: string) => void;
   onDeleteOrder: (orderId: string) => void;
   onUpdateTrade: (
