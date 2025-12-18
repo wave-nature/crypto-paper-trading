@@ -6,7 +6,7 @@ import TradingInterface from "./TradingInterface";
 import Portfolio from "./Portfolio";
 import OrderTable from "./OrderTable";
 import TradingSummary from "./TradingSummary";
-import { Order, OrderTabs, Symbols, SymbolsUpperCase } from "@/types";
+import { Order, Symbols, SymbolsUpperCase } from "@/types";
 import TradingInterfaceHorizontal from "./TradingInterfaceHorizontal";
 import useAuthStore from "@/store/useAuthStore";
 import useOrders from "@/store/useOrders";
@@ -19,8 +19,10 @@ import useSettingsHook from "@/hooks/useSettings";
 import useSettings from "@/store/useSettings";
 import CryptoTabs from "./CryptoTabs";
 import { ORDER_PLACED_SUCCESSFULLY } from "@/constants/toastMessages";
-import useSummaryHook from "@/hooks/useSummary";
 import { CRYPTOCURRENCIES, ORIGINAL_SORTED_ARR } from "@/constants";
+import { Button } from "@/components/ui/button";
+import { ChevronDown, ChevronRight, LayoutDashboard } from "lucide-react";
+
 // extra pixels to extend screenshot area
 const EXTRA_BOTTOM = 50;
 
@@ -61,6 +63,7 @@ export default function Home() {
     ""
   );
   const [fullChart, setFullChart] = useState(false);
+  const [isSummaryOpen, setIsSummaryOpen] = useState(false);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -442,7 +445,7 @@ export default function Home() {
 
   return (
     <>
-      <div className="mx-auto px-4 py-4">
+      <div className="mx-auto px-4 pt-2 pb-4">
         <div
           className={`flex items-center ${
             fullChart ? "justify-between" : "justify-between"
@@ -471,7 +474,7 @@ export default function Home() {
             </div>
           ) : null}
           <button
-            className="bg-violet-500 hover:bg-violet-600 text-white px-4 py-1 rounded transition-colors font-normal whitespace-nowrap"
+            className="bg-violet-500 hover:bg-violet-600 text-white text-sm px-4 py-[3px] rounded transition-colors font-normal whitespace-nowrap"
             onClick={() => setFullChart(!fullChart)}
           >
             {fullChart ? "Exit" : "Full Chart"}
@@ -480,8 +483,8 @@ export default function Home() {
 
         <div
           className={`grid ${
-            fullChart ? "grid-cols-[auto_1fr]" : "grid-cols-[5fr_1fr]"
-          } gap-6 transition-all`}
+            fullChart ? "grid-cols-[auto_1fr]" : "grid-cols-[5.2fr_1fr]"
+          } gap-2 transition-all`}
         >
           {/* Vertical Tabs for Full Chart View */}
           {fullChart && (
@@ -519,10 +522,34 @@ export default function Home() {
           )}
         </div>
         <div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-6">
-            <TradingSummary />
-            <Portfolio balance={balance} />
+          {/* Summary Toggle Section */}
+          <div className="mt-6 mb-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsSummaryOpen(!isSummaryOpen)}
+              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {isSummaryOpen ? (
+                <ChevronDown className="h-4 w-4" />
+              ) : (
+                <ChevronRight className="h-4 w-4" />
+              )}
+              <LayoutDashboard className="h-4 w-4" />
+              <span>
+                {isSummaryOpen
+                  ? "Hide Dashboard Summary"
+                  : "Show Dashboard Summary"}
+              </span>
+            </Button>
           </div>
+
+          {isSummaryOpen && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 animate-in fade-in slide-in-from-top-4 duration-300">
+              <TradingSummary />
+              <Portfolio balance={balance} />
+            </div>
+          )}
           <OrderTable
             orders={orders}
             pagination={pagination}

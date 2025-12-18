@@ -51,7 +51,7 @@ export default function CryptoTabs({
             "group relative flex items-center justify-center cursor-pointer transition-all",
             orientation === "vertical"
               ? "w-8 h-10 rounded-lg hover:bg-violet-100 dark:hover:bg-violet-900/50"
-              : "px-3 py-1.5 rounded-full border hover:bg-violet-50 dark:hover:bg-violet-900/20",
+              : "px-3 py-[2px] rounded-full border hover:bg-violet-50 dark:hover:bg-violet-900/20",
             selectedTab === crypto
               ? orientation === "vertical"
                 ? "bg-violet-100 text-violet-600 dark:bg-violet-900/50 dark:text-violet-300 ring-2 ring-violet-500 ring-offset-2 ring-offset-background"

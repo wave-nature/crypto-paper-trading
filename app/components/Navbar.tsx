@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -17,7 +18,6 @@ import {
   TrendingUp,
   TrendingDown,
   Plus,
-  LineChart,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +30,7 @@ import {
 import {
   AUTH_LOGIN,
   DASHBOARD,
+  POSITIONS,
   PRICING,
   SETTINGS,
   USER_PROFILE,
@@ -37,10 +38,12 @@ import {
 import useAuthStore from "@/store/useAuthStore";
 import usePositions from "@/store/usePositions";
 import { readableCurrency } from "@/utils/helpers";
+import { cn } from "@/lib/utils";
 
 export default function Navbar() {
   const [showBalanceModal, setShowBalanceModal] = useState(false);
   const [addAmount, setAddAmount] = useState("");
+  const pathname = usePathname();
   const supabase = createSupabaseBrowserClient();
   const { user, setBalance } = useAuthStore();
   const { overallPnl } = usePositions();
@@ -69,36 +72,44 @@ export default function Navbar() {
     }
   };
 
+  const navItems = [
+    { label: "Home", href: DASHBOARD },
+    { label: "Pricing", href: PRICING },
+    { label: "Orders", href: POSITIONS },
+  ];
+
   return (
     <>
-      <nav className="sticky top-0 z-50 bg-gradient-to-r from-violet-500/10 via-purple-500/10 to-violet-500/10 backdrop-blur-md border-b border-violet-500/20 shadow-sm">
-        <div className="mx-auto px-4 sm:px-6 lg:px-8">
+      <nav className="sticky top-0 z-50 bg-background/20 backdrop-blur-xl border-b border-border/40 transition-all duration-300 supports-[backdrop-filter]:bg-background/50">
+        <div className="absolute inset-x-0 top-0 h-full bg-violet-100/30 pointer-events-none" />
+        <div className="mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="flex items-center h-14">
             {/* Left section - Logo */}
-            <Link href={"/"} className="flex items-center space-x-2 group">
-              <div className="bg-gradient-to-br from-violet-500 to-purple-600 p-2 rounded-lg shadow-md group-hover:shadow-lg transition-shadow">
-                <LineChart className="h-4 w-4 text-white" />
-              </div>
-              <span className="text-lg font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
+            <Link href={"/"} className="flex items-center gap-2 group">
+              <span className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-600 to-indigo-600 transition-opacity duration-300 group-hover:opacity-80">
                 Paprweight
               </span>
             </Link>
 
             {/* Middle section - Navigation */}
-            <div className="flex items-center space-x-6 ml-8">
-              <Link
-                href={DASHBOARD}
-                className="flex items-center space-x-2 text-gray-700 hover:text-violet-600 transition-colors"
-              >
-                <span className="font-normal">Home</span>
-              </Link>
-
-              <Link
-                href={PRICING}
-                className="flex items-center space-x-2 text-gray-700 hover:text-violet-600 transition-colors"
-              >
-                <span className="font-normal">Pricing</span>
-              </Link>
+            <div className="flex items-center space-x-2 ml-8">
+              {navItems.map((item) => {
+                const isActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ease-out",
+                      isActive
+                        ? "bg-violet-100 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300 shadow-sm"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    )}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
             </div>
 
             {/* Right section - User actions */}
@@ -108,20 +119,23 @@ export default function Navbar() {
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="outline"
-                    className="flex items-center space-x-2 border-violet-300 hover:bg-violet-50 hover:border-violet-400 transition-colors"
+                    className="flex items-center gap-2 h-9 px-3 border-border bg-card hover:bg-muted/80 hover:shadow-sm transition-all duration-300"
                   >
-                    <Wallet className="h-4 w-4 text-violet-600" />
-                    <span className="font-semibold text-violet-700">
+                    <Wallet className="h-3.5 w-3.5 text-violet-600 dark:text-violet-400" />
+                    <span className="font-medium tabular-nums">
                       {readableCurrency(user?.balance || 0)}
                     </span>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuContent
+                  align="end"
+                  className="w-56 animate-in fade-in-80 zoom-in-95 duration-200"
+                >
                   <DropdownMenuItem
                     onClick={() => setShowBalanceModal(true)}
-                    className="cursor-pointer"
+                    className="cursor-pointer text-violet-600 dark:text-violet-400 font-medium focus:bg-violet-50 dark:focus:bg-violet-900/10"
                   >
-                    <Plus className="h-4 w-4 mr-2 text-violet-600" />
+                    <Plus className="h-3.5 w-3.5 mr-2" />
                     Add Money
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -129,18 +143,19 @@ export default function Navbar() {
 
               {/* Current P/L */}
               <div
-                className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg ${
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium border transition-colors duration-300",
                   overallPnl >= 0
-                    ? "bg-green-50 text-green-700 border border-green-200"
-                    : "bg-red-50 text-red-700 border border-red-200"
-                }`}
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800/30"
+                    : "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-900/20 dark:text-rose-400 dark:border-rose-800/30"
+                )}
               >
                 {overallPnl >= 0 ? (
-                  <TrendingUp className="h-4 w-4" />
+                  <TrendingUp className="h-3.5 w-3.5 animate-pulse" />
                 ) : (
-                  <TrendingDown className="h-4 w-4" />
+                  <TrendingDown className="h-3.5 w-3.5" />
                 )}
-                <span className="font-semibold text-sm">
+                <span className="tabular-nums">
                   {readableCurrency(Math.abs(overallPnl)) || "0.00"}
                 </span>
               </div>
@@ -149,38 +164,38 @@ export default function Navbar() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="icon"
-                    className="rounded-full border-violet-300 hover:bg-violet-50 hover:border-violet-400"
+                    className="rounded-full h-9 w-9 border border-border bg-muted/50 hover:bg-muted hover:scale-105 transition-all duration-300"
                   >
-                    <User className="h-4 w-4 text-violet-600" />
+                    <User className="h-4 w-4 text-muted-foreground" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuContent
+                  align="end"
+                  className="w-48 animate-in slide-in-from-top-2 duration-200"
+                >
                   <DropdownMenuItem asChild className="cursor-pointer">
                     <Link href={USER_PROFILE} className="flex items-center">
-                      <User className="h-4 w-4 mr-2" />
+                      <User className="h-4 w-4 mr-2 text-muted-foreground" />
                       Profile
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild className="cursor-pointer">
                     <Link href={SETTINGS} className="flex items-center">
-                      <Settings className="h-4 w-4 mr-2" />
+                      <Settings className="h-4 w-4 mr-2 text-muted-foreground" />
                       Settings
                     </Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={handleLogout}
+                    className="cursor-pointer text-red-600 dark:text-red-400 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-900/10"
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Logout
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-
-              {/* Logout Button */}
-              <Button
-                onClick={handleLogout}
-                variant="outline"
-                className="flex items-center space-x-2 border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400 transition-colors"
-              >
-                <LogOut className="h-4 w-4" />
-                <span className="font-normal">Logout</span>
-              </Button>
             </div>
           </div>
         </div>
@@ -188,14 +203,14 @@ export default function Navbar() {
 
       {/* Add Money Modal */}
       {showBalanceModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md border border-violet-200">
-            <h2 className="text-2xl font-bold mb-4 bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-card rounded-xl shadow-lg p-6 w-full max-w-md border border-border animate-in zoom-in-95 duration-200">
+            <h2 className="text-xl font-bold mb-4 text-foreground">
               Add Money
             </h2>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="amount" className="text-gray-700">
+                <Label htmlFor="amount" className="text-muted-foreground">
                   Amount ($)
                 </Label>
                 <Input
@@ -204,13 +219,13 @@ export default function Navbar() {
                   placeholder="Enter amount"
                   value={addAmount}
                   onChange={(e) => setAddAmount(e.target.value)}
-                  className="mt-1 border-violet-300 focus:border-violet-500 focus:ring-violet-500"
+                  className="mt-1.5 focus-visible:ring-violet-500"
                 />
               </div>
-              <div className="flex space-x-3">
+              <div className="flex space-x-3 pt-2">
                 <Button
                   onClick={handleAddMoney}
-                  className="flex-1 bg-violet-500 hover:bg-violet-600 text-white"
+                  className="flex-1 bg-violet-600 hover:bg-violet-700 text-white shadow-md hover:shadow-violet-500/25 transition-all duration-300"
                 >
                   Add Money
                 </Button>
@@ -220,7 +235,7 @@ export default function Navbar() {
                     setAddAmount("");
                   }}
                   variant="outline"
-                  className="flex-1 border-gray-300"
+                  className="flex-1 hover:bg-muted"
                 >
                   Cancel
                 </Button>

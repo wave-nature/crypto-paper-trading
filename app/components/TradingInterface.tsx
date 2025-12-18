@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardTitle, CardHeader } from "@/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Switch } from "@/components/ui/switch";
 import { useCurrentPrices } from "@/store/usePositions";
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { X, TrendingUp, TrendingDown, Info } from "lucide-react";
 import { Order, Symbols, SymbolsUpperCase } from "@/types";
 import { readableCurrency } from "@/utils/helpers";
 import toast from "react-hot-toast";
@@ -115,154 +117,187 @@ export default function TradingInterface({
   );
 
   return (
-    <Card className="h-full border-violet-500/20 bg-gradient-to-br from-violet-50/50 to-white dark:from-violet-950/20 dark:to-background">
-      <div className="p-4 pb-2">
-        <CardTitle className="bg-gradient-to-r from-violet-600 to-violet-400 bg-clip-text text-transparent">
-          Place Order
-        </CardTitle>
+    <Card className="h-full border-border bg-card shadow-sm flex flex-col">
+      <CardHeader className="p-4 pb-2 space-y-4">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg font-semibold tracking-tight">
+            Place Order
+          </CardTitle>
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded-md">
+            <Info className="w-3 h-3" />
+            <span>{selectedCrypto || "Select Asset"}</span>
+          </div>
+        </div>
 
         {/* Screenshot Toggle */}
-        <div className="flex items-center gap-2 mt-3 p-2 bg-violet-50 dark:bg-violet-950/30 rounded-lg border border-violet-200 dark:border-violet-800">
-          <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex-1">
-            Enable Screenshot
+        <div className="flex items-center justify-between p-2.5 bg-muted/40 rounded-lg border border-border/50">
+          <span className="text-sm font-medium text-muted-foreground">
+            Chart Screenshot
           </span>
           <Switch
             checked={settings.enableScreenshot}
             onCheckedChange={handleScreenshotToggle}
-            className="data-[state=checked]:bg-amber-500"
+            className="data-[state=checked]:bg-violet-600"
           />
         </div>
-      </div>
+      </CardHeader>
 
-      <CardContent className="p-4 pt-0">
-        <div className="space-y-4">
-          <ToggleGroup
-            type="single"
-            value={orderType}
-            onValueChange={(value: "market" | "limit") => {
-              if (value) setOrderType(value);
-            }}
-            className="w-full grid grid-cols-2"
+      <CardContent className="p-4 pt-0 space-y-5 flex-1 overflow-y-auto">
+        <ToggleGroup
+          type="single"
+          value={orderType}
+          onValueChange={(value: "market" | "limit") => {
+            if (value) setOrderType(value);
+          }}
+          className="w-full grid grid-cols-2 gap-2"
+        >
+          <ToggleGroupItem
+            value="market"
+            aria-label="Select market order"
+            className="data-[state=on]:bg-violet-600 text-sm data-[state=on]:text-white hover:bg-muted/80 data-[state=on]:shadow-sm"
+            size="sm"
           >
-            <ToggleGroupItem
-              value="market"
-              aria-label="Select market order"
-              className="data-[state=on]:bg-violet-500 data-[state=on]:text-white"
-            >
-              Market
-            </ToggleGroupItem>
-            <ToggleGroupItem
-              value="limit"
-              aria-label="Select limit order"
-              className="data-[state=on]:bg-violet-500 data-[state=on]:text-white"
-            >
-              Limit
-            </ToggleGroupItem>
-          </ToggleGroup>
-          <div>
-            <label className="block mb-1">Quantity ({selectedCrypto}):</label>
-            <input
+            Market
+          </ToggleGroupItem>
+          <ToggleGroupItem
+            value="limit"
+            aria-label="Select limit order"
+            className="data-[state=on]:bg-violet-600 text-sm data-[state=on]:text-white hover:bg-muted/80 data-[state=on]:shadow-sm"
+            size="sm"
+          >
+            Limit
+          </ToggleGroupItem>
+        </ToggleGroup>
+        <div className="flex flex-col gap-3 mb-4 p-4 bg-muted/50 rounded-xl border border-border/60 shadow-sm">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              Current Price
+            </p>
+            <p className="font-bold text-base tabular-nums text-foreground tracking-tight">
+              {currentPrice ? readableCurrency(currentPrice) : "---"}
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label className="text-xs font-medium text-muted-foreground">
+              Quantity ({selectedCrypto})
+            </Label>
+            <Input
               type="number"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="w-full p-2 border border-violet-200 rounded focus:outline-none focus:ring-2 focus:ring-violet-500"
-              placeholder="e.g., 0.1"
+              placeholder="0.00"
               step="0.0001"
               min="0"
+              className="font-medium"
             />
           </div>
-          <>
-            {orderType === "limit" && (
-              <div>
-                <label className="block mb-1">Buy Price:</label>
-                <input
-                  type="number"
-                  value={limitPrice}
-                  onChange={(e) => setLimitPrice(e.target.value)}
-                  className="w-full p-2 border border-violet-200 rounded focus:outline-none focus:ring-2 focus:ring-violet-500"
-                  placeholder="Set a price for your limit order"
-                  step="0.01"
-                  min="0"
-                />
-              </div>
-            )}
-            <div>
-              <label className="block mb-1">Stop Loss (optional):</label>
-              <input
+
+          {orderType === "limit" && (
+            <div className="space-y-2">
+              <Label className="text-xs font-medium text-muted-foreground">
+                Buy Price
+              </Label>
+              <Input
+                type="number"
+                value={limitPrice}
+                onChange={(e) => setLimitPrice(e.target.value)}
+                placeholder="0.00"
+                step="0.01"
+                min="0"
+                className="font-medium"
+              />
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label className="text-xs font-medium text-muted-foreground">
+                Stop Loss
+              </Label>
+              <Input
                 type="number"
                 value={stopLoss}
                 onChange={(e) => setStopLoss(e.target.value)}
-                className="w-full p-2 border border-violet-200 rounded focus:outline-none focus:ring-2 focus:ring-violet-500"
-                placeholder="e.g., 45000"
+                placeholder="Optional"
                 step="0.01"
                 min="0"
+                className="font-medium"
               />
             </div>
-            <div>
-              <label className="block mb-1">Target (optional):</label>
-              <input
+            <div className="space-y-2">
+              <Label className="text-xs font-medium text-muted-foreground">
+                Target
+              </Label>
+              <Input
                 type="number"
                 value={target}
                 onChange={(e) => setTarget(e.target.value)}
-                className="w-full p-2 border border-violet-200 rounded focus:outline-none focus:ring-2 focus:ring-violet-500"
-                placeholder="e.g., 55000"
+                placeholder="Optional"
                 step="0.01"
                 min="0"
+                className="font-medium"
               />
             </div>
-          </>
-          <div>
-            <p className="mb-2">
-              Current Price:{" "}
-              {currentPrice ? readableCurrency(currentPrice) : "Loading..."}
-            </p>
           </div>
+        </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span>P/L:</span>
-              <span
-                className={profitLoss >= 0 ? "text-green-500" : "text-red-500"}
-              >
-                {readableCurrency(profitLoss)}
-              </span>
-            </div>
-
-            <div className="flex space-x-2">
-              {order && (
-                <Button
-                  onClick={() => {
-                    orders.forEach(
-                      (order) =>
-                        order?.id &&
-                        order.symbol === selectedCrypto &&
-                        order.status === "open" &&
-                        onSquareOff(order.id)
-                    );
-                  }}
-                  size="icon"
-                  variant="outline"
-                  className="border-violet-500 text-violet-500 hover:bg-violet-50"
+        <div className="pt-2">
+          {/* P/L Row */}
+          {order && (
+            <div className="flex flex-col gap-3 mb-4 p-4 bg-muted/10 rounded-xl border border-border/60 shadow-sm">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-muted-foreground">P/L</p>
+                <div
+                  className={`flex items-center gap-2 font-bold text-base tabular-nums ${
+                    profitLoss >= 0
+                      ? "text-emerald-600 dark:text-emerald-500"
+                      : "text-rose-600 dark:text-rose-500"
+                  }`}
                 >
-                  <X className="h-2 w-2" />
-                </Button>
-              )}
+                  {profitLoss >= 0 ? (
+                    <TrendingUp className="w-4 h-4" />
+                  ) : (
+                    <TrendingDown className="w-4 h-4" />
+                  )}
+                  {readableCurrency(Math.abs(profitLoss))}
+                  <Button
+                    onClick={() => {
+                      orders.forEach(
+                        (order) =>
+                          order?.id &&
+                          order.symbol === selectedCrypto &&
+                          order.status === "open" &&
+                          onSquareOff(order.id)
+                      );
+                    }}
+                    size="icon"
+                    variant="ghost"
+                    className="h-6 w-6 ml-1 text-muted-foreground text-rose-600 bg-rose-100 rounded-full"
+                    title="Square Off Position"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
 
-          <div className="flex justify-between">
-            <button
+          <div className="grid grid-cols-2 gap-3">
+            <Button
               onClick={() => handleTrade("buy")}
-              className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded transition-colors"
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm hover:shadow-md transition-all active:scale-[0.98]"
             >
-              Buy
-            </button>
-            <button
+              Buy / Long
+            </Button>
+            <Button
               onClick={() => handleTrade("sell")}
-              className="bg-red-500 text-white px-4 py-2 rounded"
+              className="w-full bg-rose-600 hover:bg-rose-700 text-white shadow-sm hover:shadow-md transition-all active:scale-[0.98]"
             >
-              Sell
-            </button>
+              Sell / Short
+            </Button>
           </div>
         </div>
       </CardContent>

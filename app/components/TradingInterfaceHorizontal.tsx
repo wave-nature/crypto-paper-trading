@@ -4,12 +4,14 @@ import { useState } from "react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import useStore, { useCurrentPrices } from "@/store/usePositions";
 import { Button } from "@/components/ui/button";
-import { X, Camera } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { X, Camera, TrendingUp, TrendingDown } from "lucide-react";
 import { Order, Symbols, SymbolsUpperCase } from "@/types";
 import { readableCurrency } from "@/utils/helpers";
 import toast from "react-hot-toast";
 import useSettings from "@/store/useSettings";
 import { Switch } from "@/components/ui/switch";
+import { cn } from "@/lib/utils";
 
 interface TradingInterfaceProps {
   onTrade: (
@@ -114,137 +116,155 @@ export default function TradingInterfaceHorizontal({
   );
 
   return (
-    <div className="border border-violet-500/20 bg-gradient-to-br from-violet-50/50 to-white dark:from-violet-950/20 dark:to-background py-0 m-0 rounded-lg">
-      <div className="px-[3px] w-full">
-        <div className="my-[3px] flex items-center justify-between w-full">
-          <ToggleGroup
-            type="single"
-            value={orderType}
-            onValueChange={(value: "market" | "limit") => {
-              if (value) setOrderType(value);
-            }}
-            className="flex m-0"
-          >
-            <ToggleGroupItem
-              value="market"
-              aria-label="Select market order"
-              className="data-[state=on]:bg-violet-500 data-[state=on]:text-white px-2 py-1 h-8 m-0"
-            >
-              Market
-            </ToggleGroupItem>
-            <ToggleGroupItem
-              value="limit"
-              aria-label="Select limit order"
-              className="data-[state=on]:bg-violet-500 data-[state=on]:text-white px-2 py-1 h-8 m-0"
-            >
-              Limit
-            </ToggleGroupItem>
-          </ToggleGroup>
-          <div>
-            <input
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className="w-[85%] p-1 border border-violet-200 rounded focus:outline-none focus:ring-2 focus:ring-violet-500 h-8 placeholder:text-sm"
-              placeholder="Quantity"
-              step="0.0001"
-              min="0"
-            />
-          </div>
-          <>
-            {orderType === "limit" && (
-              <div>
-                <input
-                  type="number"
-                  value={limitPrice}
-                  onChange={(e) => setLimitPrice(e.target.value)}
-                  className="w-[85%] p-1 border border-violet-200 rounded focus:outline-none focus:ring-2 focus:ring-violet-500 h-8 placeholder:text-sm"
-                  placeholder="Limit Price ($)"
-                  step="0.01"
-                  min="0"
-                />
-              </div>
-            )}
-            <div>
-              <input
-                type="number"
-                value={stopLoss}
-                onChange={(e) => setStopLoss(e.target.value)}
-                className="w-[85%] p-1 border border-violet-200 rounded focus:outline-none focus:ring-2 focus:ring-violet-500 h-8 placeholder:text-sm"
-                placeholder="Stop Loss (optional)"
-                step="0.01"
-                min="0"
-              />
-            </div>
-            <div>
-              <input
-                type="number"
-                value={target}
-                onChange={(e) => setTarget(e.target.value)}
-                className="w-[85%] p-1 border border-violet-200 rounded focus:outline-none focus:ring-2 focus:ring-violet-500 h-8 placeholder:text-sm"
-                placeholder="Target (optional)"
-                step="0.01"
-                min="0"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Camera className="h-6 w-6" />
-              <Switch
-                checked={settings.enableScreenshot}
-                onCheckedChange={handleScreenshotToggle}
-                className="data-[state=checked]:bg-amber-500 h-4 w-10"
-              />
-            </div>
-          </>
-          <div>
-            <p>{currentPrice ? readableCurrency(currentPrice) : "0.00"}</p>
-          </div>
+    <div className="border border-border bg-card shadow-sm px-3 rounded-xl flex items-center gap-3 py-1 w-full">
+      {/* Order Type Toggle */}
+      <ToggleGroup
+        type="single"
+        value={orderType}
+        onValueChange={(value: "market" | "limit") => {
+          if (value) setOrderType(value);
+        }}
+        className="flex gap-1 shrink-0"
+      >
+        <ToggleGroupItem
+          value="market"
+          aria-label="Select market order"
+          className="data-[state=on]:bg-violet-600 data-[state=on]:text-white h-6 text-xs px-2.5 rounded-lg transition-colors border-transparent hover:bg-muted"
+        >
+          Market
+        </ToggleGroupItem>
+        <ToggleGroupItem
+          value="limit"
+          aria-label="Select limit order"
+          className="data-[state=on]:bg-violet-600 data-[state=on]:text-white h-6 text-xs px-2.5 rounded-lg transition-colors border-transparent hover:bg-muted"
+        >
+          Limit
+        </ToggleGroupItem>
+      </ToggleGroup>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 mr-2">
-              <span>P/L:</span>
-              <span
-                className={profitLoss >= 0 ? "text-green-500" : "text-red-500"}
-              >
-                {readableCurrency(profitLoss)}
-              </span>
-            </div>
+      <div className="h-4 w-px bg-border/60 mx-1 mobile-hidden" />
 
-            {order && (
-              <Button
-                onClick={() => {
-                  orders.forEach(
-                    (order) =>
-                      order?.id &&
-                      order.symbol === selectedCrypto &&
-                      order.status === "open" &&
-                      onSquareOff(order.id)
-                  );
-                }}
-                size="icon"
-                variant="outline"
-                className="border-red-500 text-red-500 hover:bg-violet-50 p-0 h-8 w-8"
-              >
-                <X />
-              </Button>
-            )}
-          </div>
+      {/* Inputs */}
+      <div className="flex items-center gap-2 flex-1 min-w-0">
+        <Input
+          type="number"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          className="h-6 text-xs w-24 focus-visible:ring-violet-500"
+          placeholder="Qty"
+          step="0.0001"
+          min="0"
+        />
 
-          <div className="flex justify-between items-center gap-3">
-            <button
-              onClick={() => handleTrade("buy")}
-              className="bg-green-500 hover:bg-green-600 text-white px-4 py-1 rounded transition-colors"
-            >
-              Buy
-            </button>
-            <button
-              onClick={() => handleTrade("sell")}
-              className="bg-red-500 text-white px-4 py-1 rounded"
-            >
-              Sell
-            </button>
-          </div>
+        {orderType === "limit" && (
+          <Input
+            type="number"
+            value={limitPrice}
+            onChange={(e) => setLimitPrice(e.target.value)}
+            className="h-6 text-xs w-24 focus-visible:ring-violet-500"
+            placeholder="Price"
+            step="0.01"
+            min="0"
+          />
+        )}
+
+        <Input
+          type="number"
+          value={stopLoss}
+          onChange={(e) => setStopLoss(e.target.value)}
+          className="h-6 text-xs w-24 focus-visible:ring-violet-500"
+          placeholder="SL"
+          step="0.01"
+          min="0"
+        />
+        <Input
+          type="number"
+          value={target}
+          onChange={(e) => setTarget(e.target.value)}
+          className="h-6 text-xs w-24 focus-visible:ring-violet-500"
+          placeholder="Target"
+          step="0.01"
+          min="0"
+        />
+      </div>
+
+      {/* Tools and Info */}
+      <div className="flex items-center gap-4 shrink-0">
+        {/* Screenshot */}
+        <div className="flex items-center gap-1.5" title="Toggle Screenshot">
+          <Camera className="h-4 w-4 text-muted-foreground" />
+          <Switch
+            checked={settings.enableScreenshot}
+            onCheckedChange={handleScreenshotToggle}
+            className="data-[state=checked]:bg-violet-600 scale-75 origin-left"
+          />
         </div>
+
+        {/* Price Info */}
+        <div className="flex flex-col items-end leading-tight">
+          <span className="text-[10px] uppercase font-bold text-muted-foreground">
+            Current
+          </span>
+          <span className="text-xs font-bold tabular-nums">
+            {currentPrice ? readableCurrency(currentPrice) : "0.00"}
+          </span>
+        </div>
+
+        {/* P/L Info */}
+        <div className="flex flex-col items-end leading-tight min-w-[60px]">
+          <span className="text-[10px] uppercase font-bold text-muted-foreground">
+            P/L
+          </span>
+          <span
+            className={cn(
+              "text-xs font-bold tabular-nums flex items-center gap-0.5",
+              profitLoss >= 0 ? "text-emerald-600" : "text-rose-600"
+            )}
+          >
+            {readableCurrency(Math.abs(profitLoss))}
+            {profitLoss > 0 && <TrendingUp className="h-2.5 w-2.5" />}
+            {profitLoss < 0 && <TrendingDown className="h-2.5 w-2.5" />}
+          </span>
+        </div>
+        {order && (
+          <Button
+            onClick={() => {
+              orders.forEach(
+                (order) =>
+                  order?.id &&
+                  order.symbol === selectedCrypto &&
+                  order.status === "open" &&
+                  onSquareOff(order.id)
+              );
+            }}
+            size="icon"
+            variant="ghost"
+            className="h-7 w-7 text-muted-foreground hover:text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-900/20 rounded-full"
+            title="Square Off"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
+
+      <div className="h-6 w-px bg-border/60 mx-1" />
+
+      {/* Actions */}
+      <div className="flex items-center gap-2 shrink-0">
+        <Button
+          onClick={() => handleTrade("buy")}
+          size="sm"
+          className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm h-6 px-4 text-xs font-semibold"
+        >
+          Buy
+        </Button>
+        <Button
+          onClick={() => handleTrade("sell")}
+          size="sm"
+          className="bg-rose-600 hover:bg-rose-700 text-white shadow-sm h-6 px-4 text-xs font-semibold"
+        >
+          Sell
+        </Button>
       </div>
     </div>
   );
