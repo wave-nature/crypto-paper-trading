@@ -49,7 +49,7 @@ interface OrderTableProps {
     order: Order,
     quantity: number,
     stopLoss?: number,
-    target?: number,
+    target?: number
   ) => void;
   pagination: {
     page: number;
@@ -260,8 +260,8 @@ const renderCardView = ({
                     profitLossClass === ""
                       ? "bg-gray-100 dark:bg-gray-800"
                       : profitLossClass.includes("green")
-                        ? "bg-green-50 dark:bg-green-950/20"
-                        : "bg-red-50 dark:bg-red-950/20"
+                      ? "bg-green-50 dark:bg-green-950/20"
+                      : "bg-red-50 dark:bg-red-950/20"
                   }`}
                 >
                   <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide mb-1">
@@ -574,16 +574,16 @@ export default function OrderTable({
     if (!openOrders) return;
 
     const openOrdersEth = currentOrders.some(
-      (order) => order.symbol === "ETH" && order.status === "open",
+      (order) => order.symbol === "ETH" && order.status === "open"
     );
     const openOrdersSol = currentOrders.some(
-      (order) => order.symbol === "SOL" && order.status === "open",
+      (order) => order.symbol === "SOL" && order.status === "open"
     );
     const openOrdersXauusd = currentOrders.some(
-      (order) => order.symbol === "XAUUSD" && order.status === "open",
+      (order) => order.symbol === "XAUUSD" && order.status === "open"
     );
     const openOrdersBtc = currentOrders.some(
-      (order) => order.symbol === "BTC" && order.status === "open",
+      (order) => order.symbol === "BTC" && order.status === "open"
     );
 
     if (openOrdersEth && !currentPrices.eth) return;
@@ -651,7 +651,7 @@ export default function OrderTable({
 
   const handleNotesClick = (order: Order) => {
     setNotesOrder(order);
-    setNotes(order.notes || ""); 
+    setNotes(order.notes || "");
   };
 
   const handleSaveNotes = async () => {
@@ -781,7 +781,7 @@ export default function OrderTable({
                 <span className="font-medium text-violet-600 dark:text-violet-400">
                   {Math.min(
                     pagination.page * pagination.limit,
-                    pagination.total,
+                    pagination.total
                   )}
                 </span>{" "}
                 of{" "}
@@ -824,11 +824,11 @@ export default function OrderTable({
                     const maxVisible = 5;
                     let startPage = Math.max(
                       1,
-                      pagination.page - Math.floor(maxVisible / 2),
+                      pagination.page - Math.floor(maxVisible / 2)
                     );
                     let endPage = Math.min(
                       pagination.totalPages,
-                      startPage + maxVisible - 1,
+                      startPage + maxVisible - 1
                     );
 
                     if (endPage - startPage < maxVisible - 1) {
@@ -846,7 +846,7 @@ export default function OrderTable({
                           className="hidden sm:inline-flex border-violet-300 text-violet-600 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-400 dark:hover:bg-violet-950/30"
                         >
                           1
-                        </Button>,
+                        </Button>
                       );
                       if (startPage > 2) {
                         pageNumbers.push(
@@ -855,7 +855,7 @@ export default function OrderTable({
                             className="hidden sm:inline px-2 text-gray-400"
                           >
                             ...
-                          </span>,
+                          </span>
                         );
                       }
                     }
@@ -877,7 +877,7 @@ export default function OrderTable({
                           }
                         >
                           {i}
-                        </Button>,
+                        </Button>
                       );
                     }
 
@@ -890,7 +890,7 @@ export default function OrderTable({
                             className="hidden sm:inline px-2 text-gray-400"
                           >
                             ...
-                          </span>,
+                          </span>
                         );
                       }
                       pageNumbers.push(
@@ -902,7 +902,7 @@ export default function OrderTable({
                           className="hidden sm:inline-flex border-violet-300 text-violet-600 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-400 dark:hover:bg-violet-950/30"
                         >
                           {pagination.totalPages}
-                        </Button>,
+                        </Button>
                       );
                     }
 
@@ -1097,7 +1097,11 @@ export default function OrderTable({
                     Profit/Loss
                   </p>
                   <p
-                    className={`font-semibold ${(notesOrder?.profit || 0) >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}
+                    className={`font-semibold ${
+                      (notesOrder?.profit || 0) >= 0
+                        ? "text-green-600 dark:text-green-400"
+                        : "text-red-600 dark:text-red-400"
+                    }`}
                   >
                     {readableCurrency(Math.abs(notesOrder.profit || 0))}
                   </p>
@@ -1117,7 +1121,9 @@ export default function OrderTable({
 
             {/* Horizontal Split: Screenshot & Notes */}
             <div
-              className={`grid grid-cols-1 md:grid-cols-${notesOrder.screenshot_url ? 2 : 1} gap-6`}
+              className={`grid grid-cols-1 md:grid-cols-${
+                notesOrder.screenshot_url ? 2 : 1
+              } gap-6`}
             >
               {/* Left: Chart Screenshot */}
               {notesOrder.screenshot_url && (

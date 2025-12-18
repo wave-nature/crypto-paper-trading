@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import useAuthStore from "@/store/useAuthStore";
 import { readableCurrency } from "@/utils/helpers";
 import toast from "react-hot-toast";
+import { Wallet, Plus } from "lucide-react";
 
 interface PortfolioProps {
   balance: number;
@@ -28,38 +29,51 @@ export default function Portfolio({ balance }: PortfolioProps) {
   };
 
   return (
-    <Card className="border-violet-500/20 bg-gradient-to-br from-violet-50/50 to-white dark:from-violet-950/20 dark:to-background">
-      <CardHeader>
-        <CardTitle className="bg-gradient-to-r from-violet-600 to-violet-400 bg-clip-text text-transparent">
+    <Card className="border-border bg-card shadow-sm h-full rounded-xl">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg font-semibold tracking-tight flex items-center gap-2">
+          <Wallet className="h-5 w-5 text-violet-600" />
           Portfolio
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-6 h-full flex flex-col justify-between">
-        <div className="space-y-6">
-          <div>
-            <h3 className="font-semibold">Cash Balance</h3>
-            <p className="text-2xl font-bold text-violet-600">
+      <CardContent className="space-y-6">
+        <div className="p-4 rounded-xl bg-violet-50 dark:bg-violet-900/10 border border-violet-100 dark:border-violet-900/20">
+          <span className="text-sm font-medium text-muted-foreground block mb-1">
+            Cash Balance
+          </span>
+          <div className="flex items-baseline gap-1">
+            <span className="text-3xl font-bold tracking-tight text-foreground">
               {readableCurrency(balance || 0)}
-            </p>
+            </span>
+            <span className="text-sm font-medium text-muted-foreground">
+              USD
+            </span>
           </div>
-          <div>
-            <h3 className="font-semibold mb-2">Add Money</h3>
-            <div className="flex space-x-2">
-              <Input
-                type="number"
-                value={addAmount}
-                onChange={(e) => setAddAmount(e.target.value)}
-                placeholder="Amount to add"
-                className="focus-visible:ring-violet-500"
-              />
-              <Button
-                onClick={handleAddMoney}
-                className="bg-violet-500 hover:bg-violet-600"
-              >
-                Add
-              </Button>
-            </div>
+        </div>
+
+        <div className="space-y-3">
+          <span className="text-sm font-medium text-foreground flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Add Funds
+          </span>
+          <div className="flex gap-2">
+            <Input
+              type="number"
+              value={addAmount}
+              onChange={(e) => setAddAmount(e.target.value)}
+              placeholder="Enter amount"
+              className="focus-visible:ring-violet-500 h-10"
+            />
+            <Button
+              onClick={handleAddMoney}
+              className="bg-violet-600 hover:bg-violet-700 text-white shrink-0"
+            >
+              Add Money
+            </Button>
           </div>
+          <p className="text-[10px] text-muted-foreground px-1">
+            * Deposits are simulated for paper trading.
+          </p>
         </div>
       </CardContent>
     </Card>

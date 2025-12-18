@@ -20,7 +20,7 @@ export default function ProfilePageContent() {
 
   return (
     <>
-      <div className="flex min-h-screen bg-gradient-to-br from-violet-50 via-purple-50 to-violet-100">
+      <div className="flex min-h-screen">
         {/* Sidebar */}
         <Sidebar />
 
