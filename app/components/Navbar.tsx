@@ -80,13 +80,13 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="sticky top-0 z-50 bg-background/20 backdrop-blur-xl border-b border-border/40 transition-all duration-300 supports-[backdrop-filter]:bg-background/50">
-        <div className="absolute inset-x-0 top-0 h-full bg-violet-100/30 pointer-events-none" />
+      <nav className="sticky top-0 z-50 backdrop-blur-xl transition-all duration-300 supports-[backdrop-filter]:bg-background/50">
+        <div className="absolute inset-x-0 top-0 h-full bg-violet-500 pointer-events-none" />
         <div className="mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="flex items-center h-14">
             {/* Left section - Logo */}
             <Link href={"/"} className="flex items-center gap-2 group">
-              <span className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-600 to-indigo-600 transition-opacity duration-300 group-hover:opacity-80">
+              <span className="text-lg font-bold text-white">
                 Paprweight
               </span>
             </Link>
@@ -103,7 +103,7 @@ export default function Navbar() {
                       "px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ease-out",
                       isActive
                         ? "bg-violet-100 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300 shadow-sm"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                        : "text-white hover:text-foreground hover:bg-muted/50"
                     )}
                   >
                     {item.label}
@@ -166,7 +166,7 @@ export default function Navbar() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="rounded-full h-9 w-9 border border-border bg-muted/50 hover:bg-muted hover:scale-105 transition-all duration-300"
+                    className="rounded-full h-9 w-9 border border-border bg-muted hover:bg-muted hover:scale-105 transition-all duration-300"
                   >
                     <User className="h-4 w-4 text-muted-foreground" />
                   </Button>
