@@ -20,9 +20,6 @@ import useSettings from "@/store/useSettings";
 import CryptoTabs from "./CryptoTabs";
 import { ORDER_PLACED_SUCCESSFULLY } from "@/constants/toastMessages";
 import { CRYPTOCURRENCIES, ORIGINAL_SORTED_ARR } from "@/constants";
-import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronRight, LayoutDashboard } from "lucide-react";
-
 // extra pixels to extend screenshot area
 const EXTRA_BOTTOM = 50;
 
@@ -63,7 +60,6 @@ export default function Home() {
     ""
   );
   const [fullChart, setFullChart] = useState(false);
-  const [isSummaryOpen, setIsSummaryOpen] = useState(false);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -522,34 +518,10 @@ export default function Home() {
           )}
         </div>
         <div>
-          {/* Summary Toggle Section */}
-          <div className="mt-6 mb-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsSummaryOpen(!isSummaryOpen)}
-              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {isSummaryOpen ? (
-                <ChevronDown className="h-4 w-4" />
-              ) : (
-                <ChevronRight className="h-4 w-4" />
-              )}
-              <LayoutDashboard className="h-4 w-4" />
-              <span>
-                {isSummaryOpen
-                  ? "Hide Dashboard Summary"
-                  : "Show Dashboard Summary"}
-              </span>
-            </Button>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-6">
+            <TradingSummary />
+            <Portfolio balance={balance} />
           </div>
-
-          {isSummaryOpen && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 animate-in fade-in slide-in-from-top-4 duration-300">
-              <TradingSummary />
-              <Portfolio balance={balance} />
-            </div>
-          )}
           <OrderTable
             orders={orders}
             pagination={pagination}
